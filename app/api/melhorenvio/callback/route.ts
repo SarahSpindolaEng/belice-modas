@@ -20,16 +20,22 @@ export async function GET(req: NextRequest) {
   const base = getMEBase()
 
   try {
+    const body = new URLSearchParams({
+      grant_type: 'authorization_code',
+      client_id: process.env.MELHOR_ENVIO_CLIENT_ID!,
+      client_secret: process.env.MELHOR_ENVIO_CLIENT_SECRET!,
+      redirect_uri: process.env.MELHOR_ENVIO_REDIRECT_URI!,
+      code,
+    })
+
     const res = await fetch(`${base}/oauth/token`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        grant_type: 'authorization_code',
-        client_id: process.env.MELHOR_ENVIO_CLIENT_ID,
-        client_secret: process.env.MELHOR_ENVIO_CLIENT_SECRET,
-        redirect_uri: process.env.MELHOR_ENVIO_REDIRECT_URI,
-        code,
-      }),
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Accept': 'application/json',
+        'User-Agent': 'BeliceModas/1.0 (belicemodas6@gmail.com)',
+      },
+      body: body.toString(),
     })
 
     if (!res.ok) {
