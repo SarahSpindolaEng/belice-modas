@@ -69,23 +69,45 @@ export async function POST(req: NextRequest) {
     const payer = data.payer
     const total = data.transaction_amount
 
+    // Recuperar endereço do external_reference
+    let endereco: string | null = null
+    let payerEmail = payer?.email ?? null
+    try {
+      const ref = data.external_reference ? JSON.parse(data.external_reference) : null
+      if (ref?.endereco) endereco = ref.endereco
+      if (ref?.email && !payerEmail) payerEmail = ref.email
+    } catch {}
+
     // Salvar no banco de dados
     try {
       await sql`
-        INSERT INTO orders (payment_id, payment_type, status, payer_email, total, items)
+        INSERT INTO orders (payment_id, payment_type, status, payer_email, endereco, total, items)
         VALUES (
           ${String(data.id)},
           ${data.payment_type_id ?? null},
           'approved',
-          ${payer?.email ?? null},
+          ${payerEmail},
+          ${endereco},
           ${total ?? 0},
           ${JSON.stringify(items)}
         )
-        ON CONFLICT (payment_id) DO NOTHING
+        ON CONFLICT (payment_id) DO UPDATE SET
+          status = 'approved',
+          payment_type = EXCLUDED.payment_type,
+          payer_email = COALESCE(EXCLUDED.payer_email, orders.payer_email),
+          endereco = COALESCE(EXCLUDED.endereco, orders.endereco)
+      `
+      // Atualizar pedido pending criado na preference
+      await sql`
+        UPDATE orders SET
+          status = 'approved',
+          payment_id = ${String(data.id)},
+          payment_type = ${data.payment_type_id ?? null}
+        WHERE payment_id = ${'pref_' + (data.preference_id ?? '')}
+          AND status = 'pending'
       `
     } catch (dbErr) {
       console.error('Erro ao salvar pedido no banco:', dbErr)
-      // Continua para enviar o email mesmo se o banco falhar
     }
 
     // Enviar email de notificação

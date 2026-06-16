@@ -1,11 +1,22 @@
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
+import { auth } from '@/auth'
 import { loadToken } from '@/lib/me-token'
 
-export default function SetupPage({
+const ADMIN_EMAILS = (process.env.ADMIN_EMAILS ?? '').split(',').map((e) => e.trim().toLowerCase())
+
+export default async function SetupPage({
   searchParams,
 }: {
   searchParams: { status?: string }
 }) {
+  const session = await auth()
+
+  // Bloqueia acesso se não estiver logado ou não for admin
+  if (!session?.user?.email || !ADMIN_EMAILS.includes(session.user.email.toLowerCase())) {
+    redirect('/login?callbackUrl=/admin/setup')
+  }
+
   const token = loadToken()
   const connected = !!token
   const justConnected = searchParams.status === 'ok'
@@ -17,7 +28,6 @@ export default function SetupPage({
         <div className="mt-2 h-px w-12 bg-gold-gradient" />
 
         <div className="mt-8 space-y-6">
-          {/* Melhor Envio */}
           <div className="border border-border p-5">
             <div className="flex items-center justify-between">
               <h2 className="font-serif text-xl text-foreground">Melhor Envio</h2>
@@ -40,7 +50,7 @@ export default function SetupPage({
 
             {!connected && (
               <p className="mt-3 text-sm font-light text-muted-foreground">
-                Conecte sua conta Melhor Envio para calcular o frete automaticamente no carrinho.
+                Conecte sua conta Melhor Envio para calcular o frete automaticamente.
               </p>
             )}
 

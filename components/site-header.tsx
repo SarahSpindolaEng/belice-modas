@@ -10,6 +10,8 @@ import { useCart } from '@/components/cart-context'
 import { useSession, signOut } from 'next-auth/react'
 import { cn } from '@/lib/utils'
 
+const ADMIN_EMAILS = ['belicemodas6@gmail.com', 'sarahgiulia2005@gmail.com']
+
 const mainLinks = [
   { href: '/', label: 'Início' },
   { href: '/novidades', label: 'Novidades' },
@@ -104,6 +106,14 @@ export function SiteHeader() {
               Meus Pedidos
             </Link>
           )}
+          {session && ADMIN_EMAILS.includes(session.user?.email ?? '') && (
+            <Link
+              href="/admin/pedidos"
+              className="hidden lg:block text-sm tracking-widest uppercase font-light text-gold-dark hover:text-gold transition-colors"
+            >
+              ⚙ Admin
+            </Link>
+          )}
           <Link
             href="/contato"
             className="hidden lg:block text-sm tracking-widest uppercase font-light text-foreground/80 hover:text-gold transition-colors"
@@ -125,6 +135,11 @@ export function SiteHeader() {
                 <Link href="/meus-pedidos" className="block px-4 py-3 text-xs uppercase tracking-wider text-foreground/80 hover:bg-accent hover:text-gold-dark transition-colors border-b border-border">
                   Meus Pedidos
                 </Link>
+                {ADMIN_EMAILS.includes(session.user?.email ?? '') && (
+                  <Link href="/admin/pedidos" className="block px-4 py-3 text-xs uppercase tracking-wider text-gold-dark hover:bg-accent transition-colors border-b border-border">
+                    ⚙ Admin
+                  </Link>
+                )}
                 <button
                   type="button"
                   onClick={() => signOut({ callbackUrl: '/' })}
