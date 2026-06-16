@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getValidToken, getMEBase } from '@/lib/me-token'
+import { getMEBase } from '@/lib/me-token'
+
+function getValidToken() {
+  return process.env.MELHOR_ENVIO_TOKEN ?? null
+}
 
 const DEFAULT_PACKAGE = {
   height: 10,
