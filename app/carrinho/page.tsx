@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
 import { PageBanner } from '@/components/page-banner'
@@ -23,6 +24,7 @@ interface FreteOpcao {
 export default function CartPage() {
   const { items, updateQuantity, removeFromCart, subtotal } = useCart()
   const [freteOpcao, setFreteOpcao] = useState<FreteOpcao | null>(null)
+  const router = useRouter()
 
   function irParaCheckout() {
     if (!freteOpcao) return
@@ -32,7 +34,7 @@ export default function CartPage() {
       frete_preco: String(freteOpcao.preco),
       frete_prazo: String(freteOpcao.prazo),
     })
-    window.location.href = `/checkout?${params.toString()}`
+    router.push(`/checkout?${params.toString()}`)
   }
 
   const frete = freteOpcao?.preco ?? null
