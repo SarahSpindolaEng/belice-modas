@@ -6,9 +6,9 @@ import { CheckCircle, XCircle, Clock } from 'lucide-react'
 import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
 import { useCart } from '@/components/cart-context'
-import { useEffect } from 'react'
+import { useEffect, Suspense } from 'react'
 
-export default function ConfirmacaoPage() {
+function ConfirmacaoContent() {
   const searchParams = useSearchParams()
   const status = searchParams.get('status')
   const { clearCart } = useCart()
@@ -46,30 +46,38 @@ export default function ConfirmacaoPage() {
   }
 
   return (
+    <main className="flex min-h-[60vh] flex-col items-center justify-center px-4 py-20 text-center">
+      {config.icon}
+      <h1 className="mt-6 font-serif text-3xl text-foreground">{config.title}</h1>
+      <p className="mt-3 max-w-sm font-light text-muted-foreground">{config.message}</p>
+
+      <div className="mt-10 flex flex-col gap-3 sm:flex-row">
+        {status !== 'approved' && (
+          <Link
+            href="/carrinho"
+            className="bg-foreground px-8 py-4 text-xs uppercase tracking-widest text-background transition-colors hover:bg-gold-dark"
+          >
+            Voltar ao carrinho
+          </Link>
+        )}
+        <Link
+          href="/produtos"
+          className="border border-foreground px-8 py-4 text-xs uppercase tracking-widest text-foreground transition-colors hover:border-gold hover:text-gold-dark"
+        >
+          Continuar comprando
+        </Link>
+      </div>
+    </main>
+  )
+}
+
+export default function ConfirmacaoPage() {
+  return (
     <>
       <SiteHeader />
-      <main className="flex min-h-[60vh] flex-col items-center justify-center px-4 py-20 text-center">
-        {config.icon}
-        <h1 className="mt-6 font-serif text-3xl text-foreground">{config.title}</h1>
-        <p className="mt-3 max-w-sm font-light text-muted-foreground">{config.message}</p>
-
-        <div className="mt-10 flex flex-col gap-3 sm:flex-row">
-          {status !== 'approved' && (
-            <Link
-              href="/carrinho"
-              className="bg-foreground px-8 py-4 text-xs uppercase tracking-widest text-background transition-colors hover:bg-gold-dark"
-            >
-              Voltar ao carrinho
-            </Link>
-          )}
-          <Link
-            href="/produtos"
-            className="border border-foreground px-8 py-4 text-xs uppercase tracking-widest text-foreground transition-colors hover:border-gold hover:text-gold-dark"
-          >
-            Continuar comprando
-          </Link>
-        </div>
-      </main>
+      <Suspense fallback={<div className="flex min-h-[60vh] items-center justify-center text-muted-foreground">Carregando...</div>}>
+        <ConfirmacaoContent />
+      </Suspense>
       <SiteFooter />
     </>
   )
