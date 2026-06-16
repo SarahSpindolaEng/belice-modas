@@ -24,6 +24,17 @@ export default function CartPage() {
   const { items, updateQuantity, removeFromCart, subtotal } = useCart()
   const [freteOpcao, setFreteOpcao] = useState<FreteOpcao | null>(null)
 
+  function irParaCheckout() {
+    if (!freteOpcao) return
+    const params = new URLSearchParams({
+      frete_nome: freteOpcao.nome,
+      frete_transportadora: freteOpcao.transportadora,
+      frete_preco: String(freteOpcao.preco),
+      frete_prazo: String(freteOpcao.prazo),
+    })
+    window.location.href = `/checkout?${params.toString()}`
+  }
+
   const frete = freteOpcao?.preco ?? null
   const total = frete !== null ? subtotal + frete : subtotal
   const totalItens = items.reduce((acc, i) => acc + i.quantity, 0)
@@ -150,12 +161,19 @@ export default function CartPage() {
                   onSelect={setFreteOpcao}
                   selected={freteOpcao}
                 />
-                <Link
-                  href="/checkout"
-                  className="mt-6 flex items-center justify-center gap-2 bg-foreground px-6 py-4 text-xs uppercase tracking-widest text-background transition-colors hover:bg-gold-gradient hover:text-gold-foreground"
+                <button
+                  type="button"
+                  onClick={irParaCheckout}
+                  disabled={!freteOpcao}
+                  className="mt-6 flex w-full items-center justify-center gap-2 bg-foreground px-6 py-4 text-xs uppercase tracking-widest text-background transition-colors hover:bg-gold-gradient hover:text-gold-foreground disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   Finalizar Compra <ArrowRight className="h-4 w-4" />
-                </Link>
+                </button>
+                {!freteOpcao && (
+                  <p className="mt-2 text-center text-xs font-light text-muted-foreground">
+                    Calcule o frete para continuar
+                  </p>
+                )}
                 <Link
                   href="/produtos"
                   className="mt-3 block text-center text-xs uppercase tracking-widest text-muted-foreground hover:text-gold-dark transition-colors"
