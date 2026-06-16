@@ -1,11 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { MercadoPagoConfig, Payment } from 'mercadopago'
+import { createHmac } from 'crypto'
 import nodemailer from 'nodemailer'
 import sql from '@/lib/db'
 
 const client = new MercadoPagoConfig({
   accessToken: process.env.MP_ACCESS_TOKEN!,
 })
+
+/**
+ * Verifica assinatura do Mercado Pago (x-signature header).
+ * Docs: https://www.mercadopago.com.br/developers/pt/docs/your-integrations/notifications/webhooks
+ */
+function verificarAssinaturaMP(req: NextRequest, rawBody: string): boolean {
+  const secret = process.env.MP_WEBHOOK_SECRET
+  if (!secret) return true // sem secret configurado, aceita (modo dev)
+
+  const xSignature = req.headers.get('x-signature')
+  const xRequestId = req.headers.get('x-request-id')
+  const dataId = new URL(req.url).searchParams.get('data.id') ?? ''
+
+  if (!xSignature) return false
+
+  // Formato: ts=...,v1=...
+  const parts = Object.fromEntries(
+    xSignature.split(',').map((p) => p.split('=') as [string, string]),
+  )
+  const ts = parts['ts']
+  const hash = parts['v1']
+  if (!ts || !hash) return false
+
+  const manifest = `id:${dataId};request-id:${xRequestId ?? ''};ts:${ts};`
+  const expected = createHmac('sha256', secret).update(manifest).digest('hex')
+
+  return expected === hash
+}
 
 const transporter = nodemailer.createTransport({
   service: 'gmail',
@@ -17,7 +46,13 @@ const transporter = nodemailer.createTransport({
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json()
+    const rawBody = await req.text()
+
+    if (!verificarAssinaturaMP(req, rawBody)) {
+      return NextResponse.json({ error: 'Assinatura inválida' }, { status: 401 })
+    }
+
+    const body = JSON.parse(rawBody)
 
     if (body.type !== 'payment') {
       return NextResponse.json({ ok: true })

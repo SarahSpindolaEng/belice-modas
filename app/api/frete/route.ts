@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getMEBase } from '@/lib/me-token'
+import { rateLimit, getIp } from '@/lib/rate-limit'
 
 function getValidToken() {
   return process.env.MELHOR_ENVIO_TOKEN ?? null
@@ -18,6 +19,15 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  // Rate limit: máx 20 cálculos por IP a cada 5 minutos
+  const { allowed } = rateLimit(getIp(req), { maxRequests: 20, windowMs: 5 * 60 * 1000 })
+  if (!allowed) {
+    return NextResponse.json(
+      { error: 'Muitas requisições. Aguarde alguns minutos.' },
+      { status: 429 },
+    )
+  }
+
   try {
     const { cep_destino, quantidade } = await req.json()
 
