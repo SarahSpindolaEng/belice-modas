@@ -30,7 +30,7 @@ export function CatalogGrid({
     if (sort === 'menor') list.sort((a, b) => a.price - b.price)
     if (sort === 'maior') list.sort((a, b) => b.price - a.price)
     if (sort === 'novidades')
-      list.sort((a, b) => Number(b.isNew) - Number(a.isNew))
+      list.sort((a, b) => (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0))
     return list
   }, [products, filter, sort])
 

@@ -31,6 +31,7 @@ export async function GET(req: NextRequest) {
       cancelamento_motivo,
       cancelamento_data
     FROM orders
+    WHERE status <> 'pending'
     ORDER BY
       cancelamento_solicitado DESC,
       created_at DESC
