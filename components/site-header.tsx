@@ -99,7 +99,7 @@ export function SiteHeader() {
 
         {/* right icons */}
         <div className="flex items-center gap-5 lg:flex-1 lg:justify-end">
-          {session && (
+          {session && !ADMIN_EMAILS.includes(session.user?.email ?? '') && (
             <Link
               href="/meus-pedidos"
               className="hidden lg:block text-sm tracking-widest uppercase font-light text-foreground/80 hover:text-gold transition-colors"
@@ -138,9 +138,11 @@ export function SiteHeader() {
                 <span className="max-w-[100px] truncate text-xs uppercase tracking-wider text-gold-dark font-medium">{session.user?.name?.split(' ')[0]}</span>
               </button>
               <div className="absolute right-0 top-full w-44 border border-border bg-background shadow-lg hidden group-hover:block before:absolute before:-top-2 before:left-0 before:right-0 before:h-2 before:content-['']">
-                <Link href="/meus-pedidos" className="block px-4 py-3 text-xs uppercase tracking-wider text-foreground/80 hover:bg-accent hover:text-gold-dark transition-colors border-b border-border">
-                  Meus Pedidos
-                </Link>
+                {!ADMIN_EMAILS.includes(session.user?.email ?? '') && (
+                  <Link href="/meus-pedidos" className="block px-4 py-3 text-xs uppercase tracking-wider text-foreground/80 hover:bg-accent hover:text-gold-dark transition-colors border-b border-border">
+                    Meus Pedidos
+                  </Link>
+                )}
                 {ADMIN_EMAILS.includes(session.user?.email ?? '') && (
                   <Link href="/admin/pedidos" className="block px-4 py-3 text-xs uppercase tracking-wider text-gold-dark hover:bg-accent transition-colors border-b border-border">
                     ⚙ Admin
