@@ -223,9 +223,16 @@ export function SiteHeader() {
                   {cat.label}
                 </MobileLink>
               ))}
-              <MobileLink href="/meus-pedidos" onClick={() => setMobileOpen(false)}>
-                Meus Pedidos
-              </MobileLink>
+              {session && !ADMIN_EMAILS.includes(session.user?.email ?? '') && (
+                <MobileLink href="/meus-pedidos" onClick={() => setMobileOpen(false)}>
+                  Meus Pedidos
+                </MobileLink>
+              )}
+              {session && ADMIN_EMAILS.includes(session.user?.email ?? '') && (
+                <MobileLink href="/admin/pedidos" onClick={() => setMobileOpen(false)}>
+                  ⚙ Admin
+                </MobileLink>
+              )}
               <MobileLink href="/contato" onClick={() => setMobileOpen(false)}>
                 Contato
               </MobileLink>
