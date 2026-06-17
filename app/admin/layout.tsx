@@ -1,12 +1,17 @@
 import { redirect } from 'next/navigation'
 import { auth } from '@/auth'
 
-const ADMIN_EMAILS = (process.env.ADMIN_EMAILS ?? '')
-  .split(',')
-  .map((e) => e.trim().toLowerCase())
+// Fallback hardcoded — garante acesso mesmo se ADMIN_EMAILS não estiver no Vercel
+const FALLBACK_ADMINS = ['belicemodas6@gmail.com', 'sarahgiulia2005@gmail.com']
 
-// Segunda camada de segurança (middleware é a primeira).
-// Server component — roda no servidor antes de qualquer HTML ser enviado.
+function getAdminEmails(): string[] {
+  const fromEnv = (process.env.ADMIN_EMAILS ?? '')
+    .split(',')
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean)
+  return fromEnv.length > 0 ? fromEnv : FALLBACK_ADMINS
+}
+
 export default async function AdminLayout({
   children,
 }: {
@@ -18,7 +23,8 @@ export default async function AdminLayout({
     redirect('/login?callbackUrl=/admin/pedidos')
   }
 
-  if (!ADMIN_EMAILS.includes(session.user.email.toLowerCase())) {
+  const adminEmails = getAdminEmails()
+  if (!adminEmails.includes(session.user.email.toLowerCase())) {
     redirect('/')
   }
 
