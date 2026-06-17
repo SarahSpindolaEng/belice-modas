@@ -1,5 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { timingSafeEqual } from 'crypto'
 import sql from '@/lib/db'
+
+// Comparacao em tempo constante (evita timing attack na checagem do secret)
+function secretsIguais(a: string, b: string): boolean {
+  const bufA = Buffer.from(a)
+  const bufB = Buffer.from(b)
+  if (bufA.length !== bufB.length) return false
+  return timingSafeEqual(bufA, bufB)
+}
 
 // Status do Melhor Envio → status amigável
 const STATUS_MAP: Record<string, string> = {
@@ -17,10 +26,12 @@ function verificarSecreta(req: NextRequest): boolean {
     console.warn('MELHOR_ENVIO_WEBHOOK_SECRET não configurado — webhook sem proteção!')
     return true
   }
+  // Prefere o header (nao para em logs de acesso como a query string).
   const headerSecret =
     req.headers.get('x-webhook-secret') ??
     req.nextUrl.searchParams.get('secret')
-  return headerSecret === secret
+  if (!headerSecret) return false
+  return secretsIguais(headerSecret, secret)
 }
 
 export async function POST(req: NextRequest) {

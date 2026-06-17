@@ -9,6 +9,10 @@ __v0_jsx-dev-runtime.ts
 # Environment variables
 .env*.local
 
+# Tokens OAuth do Melhor Envio (contem access_token + refresh_token)
+.me-token.json
+.me-token*.json
+
 # Common ignores
 node_modules
 .next/

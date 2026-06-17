@@ -2,8 +2,7 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { auth } from '@/auth'
 import { loadToken } from '@/lib/me-token'
-
-const ADMIN_EMAILS = (process.env.ADMIN_EMAILS ?? '').split(',').map((e) => e.trim().toLowerCase())
+import { isAdmin } from '@/lib/admin-emails'
 
 export default async function SetupPage({
   searchParams,
@@ -13,7 +12,7 @@ export default async function SetupPage({
   const session = await auth()
 
   // Bloqueia acesso se não estiver logado ou não for admin
-  if (!session?.user?.email || !ADMIN_EMAILS.includes(session.user.email.toLowerCase())) {
+  if (!isAdmin(session?.user?.email)) {
     redirect('/login?callbackUrl=/admin/setup')
   }
 
