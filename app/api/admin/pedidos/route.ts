@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/auth'
 import sql from '@/lib/db'
 import { rateLimit, getIp } from '@/lib/rate-limit'
-
-const ADMIN_EMAILS = (process.env.ADMIN_EMAILS ?? '').split(',').map((e) => e.trim().toLowerCase())
+import { isAdmin } from '@/lib/admin-emails'
 
 export async function GET(req: NextRequest) {
   const { allowed } = rateLimit(getIp(req), { maxRequests: 30, windowMs: 60_000 })
@@ -11,7 +10,7 @@ export async function GET(req: NextRequest) {
 
   const session = await auth()
 
-  if (!session?.user?.email || !ADMIN_EMAILS.includes(session.user.email.toLowerCase())) {
+  if (!isAdmin(session?.user?.email)) {
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
   }
 

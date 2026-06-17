@@ -32,9 +32,13 @@ export function rateLimit(
 }
 
 export function getIp(req: Request): string {
-  return (
-    req.headers.get('x-forwarded-for')?.split(',')[0].trim() ??
-    req.headers.get('x-real-ip') ??
-    'unknown'
-  )
+  // No Vercel, o IP real é o ÚLTIMO do X-Forwarded-For (adicionado pela infraestrutura).
+  // Pegar o primeiro permite bypass: atacante envia X-Forwarded-For: 1.2.3.4 (IP falso).
+  const forwarded = req.headers.get('x-forwarded-for')
+  if (forwarded) {
+    const ips = forwarded.split(',').map((ip) => ip.trim()).filter(Boolean)
+    // Usa o último IP (injetado pelo Vercel/proxy confiável), não o primeiro (cliente)
+    return ips[ips.length - 1] ?? 'unknown'
+  }
+  return req.headers.get('x-real-ip') ?? 'unknown'
 }

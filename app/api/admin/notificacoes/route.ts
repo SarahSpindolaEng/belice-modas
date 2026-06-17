@@ -12,12 +12,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/auth'
 import sql from '@/lib/db'
 import { rateLimit, getIp } from '@/lib/rate-limit'
+import { isAdmin } from '@/lib/admin-emails'
 
 export const dynamic = 'force-dynamic'
-
-const ADMIN_EMAILS = (process.env.ADMIN_EMAILS ?? '')
-  .split(',')
-  .map((e) => e.trim().toLowerCase())
 
 const POLL_INTERVAL_MS = 8_000 // verifica banco a cada 8 s
 const MAX_DURATION_MS = 55_000 // encerra antes do timeout Vercel (60 s)
@@ -28,10 +25,7 @@ export async function GET(req: NextRequest) {
   if (!allowed) return NextResponse.json({ error: 'Muitas requisições.' }, { status: 429 })
 
   const session = await auth()
-  if (
-    !session?.user?.email ||
-    !ADMIN_EMAILS.includes(session.user.email.toLowerCase())
-  ) {
+  if (!isAdmin(session?.user?.email)) {
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
   }
 
