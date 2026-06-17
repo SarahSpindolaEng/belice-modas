@@ -5,7 +5,7 @@ import { rateLimit, getIp } from '@/lib/rate-limit'
 
 export async function POST(req: NextRequest) {
   // Máx 5 solicitações de cancelamento por 10 min por IP
-  const { allowed } = rateLimit(getIp(req), { maxRequests: 5, windowMs: 10 * 60_000 })
+  const { allowed } = await rateLimit(getIp(req), { maxRequests: 5, windowMs: 10 * 60_000 })
   if (!allowed) return NextResponse.json({ error: 'Muitas tentativas.' }, { status: 429 })
   const session = await auth()
   if (!session?.user?.email) {

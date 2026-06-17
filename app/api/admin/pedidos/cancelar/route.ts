@@ -11,7 +11,7 @@ const client = new MercadoPagoConfig({
 
 export async function POST(req: NextRequest) {
   // Rate limit: máx 10 ações de cancelamento por minuto por IP
-  const { allowed } = rateLimit(getIp(req), { maxRequests: 10, windowMs: 60_000 })
+  const { allowed } = await rateLimit(getIp(req), { maxRequests: 10, windowMs: 60_000 })
   if (!allowed) return NextResponse.json({ error: 'Muitas requisições.' }, { status: 429 })
 
   const session = await auth()

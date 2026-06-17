@@ -14,7 +14,7 @@ function escapeHtml(str: string): string {
 export async function POST(req: NextRequest) {
   // Rate limit: máx 5 mensagens por IP a cada 10 minutos
   const ip = getIp(req)
-  const { allowed } = rateLimit(ip, { maxRequests: 5, windowMs: 10 * 60 * 1000 })
+  const { allowed } = await rateLimit(ip, { maxRequests: 5, windowMs: 10 * 60 * 1000 })
   if (!allowed) {
     return NextResponse.json(
       { error: 'Muitas tentativas. Aguarde alguns minutos.' },

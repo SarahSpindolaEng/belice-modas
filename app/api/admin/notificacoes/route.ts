@@ -21,7 +21,7 @@ const MAX_DURATION_MS = 55_000 // encerra antes do timeout Vercel (60 s)
 
 export async function GET(req: NextRequest) {
   // Máx 10 reconexões por minuto por IP (SSE reconecta automaticamente)
-  const { allowed } = rateLimit(getIp(req), { maxRequests: 10, windowMs: 60_000 })
+  const { allowed } = await rateLimit(getIp(req), { maxRequests: 10, windowMs: 60_000 })
   if (!allowed) return NextResponse.json({ error: 'Muitas requisições.' }, { status: 429 })
 
   const session = await auth()

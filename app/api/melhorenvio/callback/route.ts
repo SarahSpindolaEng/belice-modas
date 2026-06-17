@@ -17,6 +17,16 @@ export async function GET(req: NextRequest) {
     )
   }
 
+  // Validacao anti-CSRF: o state recebido tem que bater com o cookie definido no inicio do fluxo.
+  const state = req.nextUrl.searchParams.get('state')
+  const expectedState = req.cookies.get('me_oauth_state')?.value
+  if (!state || !expectedState || state !== expectedState) {
+    return NextResponse.json(
+      { error: 'Parâmetro state inválido (possível CSRF). Reinicie a conexão.' },
+      { status: 400 },
+    )
+  }
+
   const base = getMEBase()
 
   try {

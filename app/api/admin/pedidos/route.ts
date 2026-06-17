@@ -5,7 +5,7 @@ import { rateLimit, getIp } from '@/lib/rate-limit'
 import { isAdmin } from '@/lib/admin-emails'
 
 export async function GET(req: NextRequest) {
-  const { allowed } = rateLimit(getIp(req), { maxRequests: 30, windowMs: 60_000 })
+  const { allowed } = await rateLimit(getIp(req), { maxRequests: 30, windowMs: 60_000 })
   if (!allowed) return NextResponse.json({ error: 'Muitas requisições.' }, { status: 429 })
 
   const session = await auth()

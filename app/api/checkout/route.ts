@@ -9,7 +9,7 @@ const client = new MercadoPagoConfig({
 })
 
 export async function POST(req: NextRequest) {
-  const { allowed } = rateLimit(getIp(req), { maxRequests: 10, windowMs: 10 * 60 * 1000 })
+  const { allowed } = await rateLimit(getIp(req), { maxRequests: 10, windowMs: 10 * 60 * 1000 })
   if (!allowed) {
     return NextResponse.json({ error: 'Muitas tentativas. Aguarde alguns minutos.' }, { status: 429 })
   }

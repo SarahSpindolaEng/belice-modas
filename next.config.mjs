@@ -31,7 +31,7 @@ const nextConfig = {
             value: [
               "default-src 'self'",
               // Scripts: apenas o próprio site + Mercado Pago + Next.js inline (nonce não suportado em static export)
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://sdk.mercadopago.com https://www.mercadopago.com",
+              "script-src 'self' 'unsafe-inline' https://sdk.mercadopago.com https://www.mercadopago.com",
               // Estilos: inline permitido (Tailwind gera inline)
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               // Fontes

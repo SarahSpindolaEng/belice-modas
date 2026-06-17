@@ -8,13 +8,31 @@ const client = new MercadoPagoConfig({
   accessToken: process.env.MP_ACCESS_TOKEN!,
 })
 
+// Escapa HTML para evitar injecao no email de notificacao
+function escapeHtml(v: unknown): string {
+  return String(v ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
+}
+
 /**
  * Verifica assinatura do Mercado Pago (x-signature header).
  * Docs: https://www.mercadopago.com.br/developers/pt/docs/your-integrations/notifications/webhooks
  */
 function verificarAssinaturaMP(req: NextRequest, rawBody: string): boolean {
   const secret = process.env.MP_WEBHOOK_SECRET
-  if (!secret) return true // sem secret configurado, aceita (modo dev)
+  if (!secret) {
+    // Em producao, recusar webhooks sem segredo (fail-closed). Em dev, permitir p/ testes.
+    if (process.env.NODE_ENV === 'production') {
+      console.error('MP_WEBHOOK_SECRET ausente em producao — webhook recusado. Configure a variavel no Vercel.')
+      return false
+    }
+    console.warn('MP_WEBHOOK_SECRET nao configurado (dev) — aceitando sem validar assinatura.')
+    return true
+  }
 
   const xSignature = req.headers.get('x-signature')
   const xRequestId = req.headers.get('x-request-id')
@@ -127,8 +145,8 @@ export async function POST(req: NextRequest) {
     // Enviar email de notificação
     const itemsHtml = items.map((item: any) =>
       '<tr>' +
-      '<td style="padding:8px;border-bottom:1px solid #eee">' + item.title + (item.description ? ' (' + item.description + ')' : '') + '</td>' +
-      '<td style="padding:8px;border-bottom:1px solid #eee;text-align:center">' + item.quantity + '</td>' +
+      '<td style="padding:8px;border-bottom:1px solid #eee">' + escapeHtml(item.title) + (item.description ? ' (' + escapeHtml(item.description) + ')' : '') + '</td>' +
+      '<td style="padding:8px;border-bottom:1px solid #eee;text-align:center">' + escapeHtml(item.quantity) + '</td>' +
       '<td style="padding:8px;border-bottom:1px solid #eee;text-align:right">R$ ' + Number(item.unit_price).toFixed(2) + '</td>' +
       '</tr>'
     ).join('')
@@ -140,8 +158,8 @@ export async function POST(req: NextRequest) {
       html:
         '<div style="font-family:sans-serif;max-width:600px;margin:0 auto">' +
         '<h2 style="color:#1a1a1a">Novo pedido recebido</h2>' +
-        '<p><strong>Pagamento:</strong> #' + data.id + ' — ' + data.payment_type_id + '</p>' +
-        '<p><strong>Cliente:</strong> ' + (payer?.email ?? 'Não informado') + '</p>' +
+        '<p><strong>Pagamento:</strong> #' + escapeHtml(data.id) + ' — ' + escapeHtml(data.payment_type_id) + '</p>' +
+        '<p><strong>Cliente:</strong> ' + escapeHtml(payer?.email ?? 'Não informado') + '</p>' +
         '<table style="width:100%;border-collapse:collapse;margin:16px 0">' +
         '<tr style="background:#f5f5f5">' +
         '<th style="padding:8px;text-align:left">Produto</th>' +
