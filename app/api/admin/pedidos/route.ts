@@ -8,7 +8,10 @@ import { isAdmin } from '@/lib/admin-emails'
 let schemaReady: Promise<unknown> | null = null
 function ensureSchema() {
   if (!schemaReady) {
-    schemaReady = sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS aceito boolean NOT NULL DEFAULT false`
+    schemaReady = Promise.all([
+      sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS aceito boolean NOT NULL DEFAULT false`,
+      sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS label_url text`,
+    ])
   }
   return schemaReady
 }
@@ -41,7 +44,8 @@ export async function GET(req: NextRequest) {
       cancelamento_solicitado,
       cancelamento_motivo,
       cancelamento_data,
-      aceito
+      aceito,
+      label_url
     FROM orders
     WHERE status <> 'pending'
     ORDER BY

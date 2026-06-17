@@ -4,23 +4,30 @@ import { MercadoPagoConfig, Payment } from 'mercadopago'
 import sql from '@/lib/db'
 import { rateLimit, getIp } from '@/lib/rate-limit'
 import { isAdmin } from '@/lib/admin-emails'
+import { gerarEtiqueta } from '@/lib/melhor-envio-etiqueta'
 
 const client = new MercadoPagoConfig({
   accessToken: process.env.MP_ACCESS_TOKEN!,
 })
 
-// Garante a coluna `aceito` (migração lazy, idempotente).
+// Garante colunas auxiliares (migração lazy, idempotente).
 let schemaReady: Promise<unknown> | null = null
 function ensureSchema() {
   if (!schemaReady) {
-    schemaReady = sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS aceito boolean NOT NULL DEFAULT false`
+    schemaReady = Promise.all([
+      sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS aceito boolean NOT NULL DEFAULT false`,
+      sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS dados_envio jsonb`,
+      sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS preference_id text`,
+      sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS label_url text`,
+    ])
   }
   return schemaReady
 }
 
 /**
  * Aceitar ou negar um pedido PAGO.
- * - aceitar: libera o pedido (marca aceito = true). A etiqueta sera gerada nesta etapa (fase 2).
+ * - aceitar: gera a etiqueta no Melhor Envio e libera o pedido.
+ *   (se a etiqueta falhar, o pedido ainda é aceito; o admin gera manualmente.)
  * - negar: reembolsa o cliente no Mercado Pago e cancela o pedido.
  */
 export async function POST(req: NextRequest) {
@@ -40,7 +47,7 @@ export async function POST(req: NextRequest) {
   }
 
   const [order] = await sql`
-    SELECT id, payment_id, status, status_envio, aceito
+    SELECT id, payment_id, status, status_envio, aceito, total, items, dados_envio
     FROM orders
     WHERE payment_id = ${payment_id}
   `
@@ -56,12 +63,42 @@ export async function POST(req: NextRequest) {
     if (order.aceito) {
       return NextResponse.json({ error: 'Pedido já foi aceito.' }, { status: 400 })
     }
+
+    // Gera a etiqueta no Melhor Envio
+    const etiqueta = await gerarEtiqueta({
+      total: order.total,
+      items: order.items,
+      dados_envio: order.dados_envio,
+    })
+
+    if (etiqueta.ok) {
+      await sql`
+        UPDATE orders SET
+          aceito = true,
+          status_envio = 'etiqueta_gerada',
+          tracking_code = COALESCE(${etiqueta.tracking ?? null}, tracking_code),
+          melhor_envio_id = COALESCE(${etiqueta.melhorEnvioId ?? null}, melhor_envio_id),
+          label_url = ${etiqueta.labelUrl ?? null}
+        WHERE payment_id = ${payment_id}
+      `
+      return NextResponse.json({
+        ok: true,
+        mensagem: 'Pedido aceito e etiqueta gerada.',
+        labelUrl: etiqueta.labelUrl ?? null,
+        aviso: etiqueta.erro ?? null,
+      })
+    }
+
+    // Etiqueta falhou — aceita mesmo assim, admin gera manualmente.
     await sql`
       UPDATE orders SET aceito = true, status_envio = 'aguardando_envio'
       WHERE payment_id = ${payment_id}
     `
-    // FASE 2: aqui entrara a geracao da etiqueta no Melhor Envio.
-    return NextResponse.json({ ok: true, mensagem: 'Pedido aceito.' })
+    return NextResponse.json({
+      ok: true,
+      mensagem: 'Pedido aceito.',
+      aviso: `Etiqueta não foi gerada automaticamente: ${etiqueta.erro} — gere manualmente no painel do Melhor Envio.`,
+    })
   }
 
   // acao === 'negar' → reembolso + cancelamento

@@ -31,6 +31,7 @@ interface Order {
   cancelamento_motivo: string | null
   cancelamento_data: string | null
   aceito: boolean
+  label_url: string | null
 }
 
 const STATUS_ENVIO_LABEL: Record<string, { label: string; color: string }> = {
@@ -349,6 +350,16 @@ export default function AdminPedidosPage() {
                           {order.tracking_code}
                         </a>
                       </span>
+                    )}
+                    {order.label_url && (
+                      <a
+                        href={order.label_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="font-medium text-gold-dark underline"
+                      >
+                        Imprimir etiqueta
+                      </a>
                     )}
                   </div>
 
