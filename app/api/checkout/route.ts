@@ -8,6 +8,18 @@ const client = new MercadoPagoConfig({
   accessToken: process.env.MP_ACCESS_TOKEN!,
 })
 
+// Colunas para a etiqueta (migração lazy, idempotente).
+let schemaReady: Promise<unknown> | null = null
+function ensureSchema() {
+  if (!schemaReady) {
+    schemaReady = Promise.all([
+      sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS dados_envio jsonb`,
+      sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS preference_id text`,
+    ])
+  }
+  return schemaReady
+}
+
 export async function POST(req: NextRequest) {
   const { allowed } = await rateLimit(getIp(req), { maxRequests: 10, windowMs: 10 * 60 * 1000 })
   if (!allowed) {
@@ -25,6 +37,11 @@ export async function POST(req: NextRequest) {
     const endereco = typeof body.endereco === 'string'
       ? body.endereco.replace(/[<>]/g, '').trim().slice(0, 500)
       : null
+    // Dados estruturados de envio (para gerar a etiqueta depois). Limita tamanho por seguranca.
+    const dadosEnvio =
+      body.dadosEnvio && typeof body.dadosEnvio === 'object'
+        ? JSON.parse(JSON.stringify(body.dadosEnvio).slice(0, 2000))
+        : null
 
     if (!Array.isArray(items) || items.length === 0) {
       return NextResponse.json({ error: 'Carrinho vazio.' }, { status: 400 })
@@ -73,8 +90,9 @@ export async function POST(req: NextRequest) {
 
     // Salva pedido como pending com endereço para o webhook atualizar depois
     if (result.id) {
+      await ensureSchema()
       await sql`
-        INSERT INTO orders (payment_id, payment_type, status, payer_email, endereco, total, items)
+        INSERT INTO orders (payment_id, payment_type, status, payer_email, endereco, total, items, dados_envio, preference_id)
         VALUES (
           ${'pref_' + result.id},
           'preference',
@@ -82,7 +100,9 @@ export async function POST(req: NextRequest) {
           ${email ?? null},
           ${endereco ?? null},
           ${total},
-          ${JSON.stringify(validatedItems)}
+          ${JSON.stringify(validatedItems)},
+          ${dadosEnvio ? JSON.stringify(dadosEnvio) : null},
+          ${String(result.id)}
         )
         ON CONFLICT (payment_id) DO NOTHING
       `

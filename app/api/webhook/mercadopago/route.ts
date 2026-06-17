@@ -138,6 +138,16 @@ export async function POST(req: NextRequest) {
         WHERE payment_id = ${'pref_' + (data.preference_id ?? '')}
           AND status = 'pending'
       `
+      // Leva os dados estruturados de envio para o pedido aprovado (usados na geração da etiqueta).
+      await sql`
+        UPDATE orders dst SET
+          dados_envio = src.dados_envio,
+          preference_id = COALESCE(dst.preference_id, src.preference_id)
+        FROM orders src
+        WHERE dst.payment_id = ${String(data.id)}
+          AND src.payment_id = ${'pref_' + (data.preference_id ?? '')}
+          AND src.dados_envio IS NOT NULL
+      `
     } catch (dbErr) {
       console.error('Erro ao salvar pedido no banco:', dbErr)
     }

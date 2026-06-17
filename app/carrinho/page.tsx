@@ -29,6 +29,7 @@ export default function CartPage() {
   function irParaCheckout() {
     if (!freteOpcao) return
     const params = new URLSearchParams({
+      frete_id: String(freteOpcao.id),
       frete_nome: freteOpcao.nome,
       frete_transportadora: freteOpcao.transportadora,
       frete_preco: String(freteOpcao.preco),

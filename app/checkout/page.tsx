@@ -70,6 +70,7 @@ function CheckoutContent() {
   }
 
   // Frete vindo do carrinho via URL
+  const freteId = searchParams.get('frete_id')
   const freteNome = searchParams.get('frete_nome')
   const freteTransportadora = searchParams.get('frete_transportadora')
   const fretePreco = parseFloat(searchParams.get('frete_preco') ?? '0')
@@ -81,7 +82,7 @@ function CheckoutContent() {
 
   function validarEndereco(): boolean {
     if (delivery === 'retirada') return true
-    const obrigatorios: (keyof Endereco)[] = ['nome', 'telefone', 'cep', 'rua', 'numero', 'bairro', 'cidade', 'estado']
+    const obrigatorios: (keyof Endereco)[] = ['nome', 'cpf', 'telefone', 'cep', 'rua', 'numero', 'bairro', 'cidade', 'estado']
     for (const campo of obrigatorios) {
       if (!endereco[campo].trim()) {
         setErroEndereco(`Preencha o campo: ${campo}`)
@@ -116,9 +117,24 @@ function CheckoutContent() {
             size: i.size,
           })),
           frete: delivery === 'retirada' ? null : {
+            id: freteId ? Number(freteId) : null,
             nome: freteNome,
             preco: fretePreco,
             prazo: fretePrazo,
+          },
+          dadosEnvio: delivery === 'retirada' ? null : {
+            nome: endereco.nome,
+            cpf: endereco.cpf,
+            telefone: endereco.telefone,
+            cep: endereco.cep,
+            rua: endereco.rua,
+            numero: endereco.numero,
+            complemento: endereco.complemento,
+            bairro: endereco.bairro,
+            cidade: endereco.cidade,
+            estado: endereco.estado,
+            frete_service_id: freteId ? Number(freteId) : null,
+            frete_nome: freteNome,
           },
         }),
       })
@@ -211,7 +227,7 @@ function CheckoutContent() {
                       <input className={inputClass} value={endereco.nome} onChange={(e) => setField('nome', e.target.value)} placeholder="Seu nome completo" />
                     </div>
                     <div>
-                      <label className={labelClass}>CPF</label>
+                      <label className={labelClass}>CPF *</label>
                       <input className={inputClass} value={endereco.cpf} onChange={(e) => setField('cpf', e.target.value)} placeholder="000.000.000-00" inputMode="numeric" />
                     </div>
                     <div>
