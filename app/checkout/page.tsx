@@ -32,6 +32,14 @@ const ESTADOS = [
   'SP','SE','TO',
 ]
 
+function formatarTelefone(v: string) {
+  const d = v.replace(/\D/g, '').slice(0, 11)
+  if (d.length <= 2) return d
+  if (d.length <= 3) return `(${d.slice(0, 2)}) ${d.slice(2)}`
+  if (d.length <= 7) return `(${d.slice(0, 2)}) ${d.slice(2, 3)} ${d.slice(3)}`
+  return `(${d.slice(0, 2)}) ${d.slice(2, 3)} ${d.slice(3, 7)}-${d.slice(7, 11)}`
+}
+
 function CheckoutContent() {
   const { items, subtotal } = useCart()
   const { data: session } = useSession()
@@ -232,7 +240,7 @@ function CheckoutContent() {
                     </div>
                     <div>
                       <label className={labelClass}>Telefone *</label>
-                      <input className={inputClass} value={endereco.telefone} onChange={(e) => setField('telefone', e.target.value)} placeholder="(00) 00000-0000" inputMode="tel" />
+                      <input className={inputClass} value={endereco.telefone} onChange={(e) => setField('telefone', formatarTelefone(e.target.value))} placeholder="(00) 0 0000-0000" inputMode="tel" maxLength={16} />
                     </div>
                     <div>
                       <label className={labelClass}>CEP *</label>
