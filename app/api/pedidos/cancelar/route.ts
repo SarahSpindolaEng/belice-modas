@@ -1,14 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/auth'
 import sql from '@/lib/db'
+import { rateLimit, getIp } from '@/lib/rate-limit'
 
 export async function POST(req: NextRequest) {
+  // Máx 5 solicitações de cancelamento por 10 min por IP
+  const { allowed } = rateLimit(getIp(req), { maxRequests: 5, windowMs: 10 * 60_000 })
+  if (!allowed) return NextResponse.json({ error: 'Muitas tentativas.' }, { status: 429 })
   const session = await auth()
   if (!session?.user?.email) {
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
   }
 
-  const { payment_id, motivo } = await req.json()
+  const body = await req.json()
+  const payment_id = typeof body.payment_id === 'string' ? body.payment_id.trim().slice(0, 200) : ''
+  // Sanitiza motivo — sem HTML, máx 1000 chars
+  const motivo = typeof body.motivo === 'string'
+    ? body.motivo.replace(/[<>]/g, '').trim().slice(0, 1000)
+    : 'Não informado'
 
   if (!payment_id) {
     return NextResponse.json({ error: 'Pedido não informado.' }, { status: 400 })

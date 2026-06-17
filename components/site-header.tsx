@@ -9,6 +9,7 @@ import { categories } from '@/lib/products'
 import { useCart } from '@/components/cart-context'
 import { useSession, signOut } from 'next-auth/react'
 import { cn } from '@/lib/utils'
+import { AdminNotificacoes } from '@/components/admin-notificacoes'
 
 const ADMIN_EMAILS = ['belicemodas6@gmail.com', 'sarahgiulia2005@gmail.com']
 
@@ -107,12 +108,17 @@ export function SiteHeader() {
             </Link>
           )}
           {session && ADMIN_EMAILS.includes(session.user?.email ?? '') && (
-            <Link
-              href="/admin/pedidos"
-              className="hidden lg:block text-sm tracking-widest uppercase font-light text-gold-dark hover:text-gold transition-colors"
-            >
-              ⚙ Admin
-            </Link>
+            <>
+              <Link
+                href="/admin/pedidos"
+                className="hidden lg:block text-sm tracking-widest uppercase font-light text-gold-dark hover:text-gold transition-colors"
+              >
+                ⚙ Admin
+              </Link>
+              <div className="hidden lg:block">
+                <AdminNotificacoes />
+              </div>
+            </>
           )}
           <Link
             href="/contato"

@@ -15,7 +15,16 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { items, email, endereco } = await req.json()
+    const body = await req.json()
+    const items = body.items
+    // Sanitiza e valida email
+    const emailRaw = typeof body.email === 'string' ? body.email.trim().slice(0, 254) : ''
+    const emailValido = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailRaw)
+    const email = emailValido ? emailRaw : null
+    // Sanitiza endereço — máx 500 chars, sem HTML
+    const endereco = typeof body.endereco === 'string'
+      ? body.endereco.replace(/[<>]/g, '').trim().slice(0, 500)
+      : null
 
     if (!Array.isArray(items) || items.length === 0) {
       return NextResponse.json({ error: 'Carrinho vazio.' }, { status: 400 })

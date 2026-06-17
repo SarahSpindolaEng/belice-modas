@@ -45,7 +45,9 @@ export async function POST(req: NextRequest) {
 
     const cepOrigem = (process.env.LOJA_CEP_ORIGEM ?? '').replace(/\D/g, '')
     const base = getMEBase()
-    const qtd = Number(quantidade) || 1
+    // Garante que qtd seja inteiro entre 1 e 100
+    // ATENÇÃO: Number(-999) = -999, que é truthy — || 1 não funcionaria aqui
+    const qtd = Math.max(1, Math.min(100, Math.floor(Number(quantidade)) || 1))
 
     const payload = {
       from: { postal_code: cepOrigem },

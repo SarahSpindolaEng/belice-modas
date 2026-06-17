@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/auth'
 import { MercadoPagoConfig, Payment } from 'mercadopago'
 import sql from '@/lib/db'
+import { rateLimit, getIp } from '@/lib/rate-limit'
 
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS ?? '').split(',').map((e) => e.trim().toLowerCase())
 
@@ -10,6 +11,10 @@ const client = new MercadoPagoConfig({
 })
 
 export async function POST(req: NextRequest) {
+  // Rate limit: máx 10 ações de cancelamento por minuto por IP
+  const { allowed } = rateLimit(getIp(req), { maxRequests: 10, windowMs: 60_000 })
+  if (!allowed) return NextResponse.json({ error: 'Muitas requisições.' }, { status: 429 })
+
   const session = await auth()
   if (!session?.user?.email || !ADMIN_EMAILS.includes(session.user.email.toLowerCase())) {
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })

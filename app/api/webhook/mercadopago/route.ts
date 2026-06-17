@@ -30,10 +30,24 @@ function verificarAssinaturaMP(req: NextRequest, rawBody: string): boolean {
   const hash = parts['v1']
   if (!ts || !hash) return false
 
+  // Proteção contra replay attack: rejeita webhooks com timestamp > 5 minutos
+  const tsNum = Number(ts)
+  const ageSeconds = (Date.now() / 1000) - tsNum
+  if (!isNaN(tsNum) && (ageSeconds > 300 || ageSeconds < -60)) {
+    console.warn('Webhook MP rejeitado: timestamp fora do intervalo', { ageSeconds })
+    return false
+  }
+
   const manifest = `id:${dataId};request-id:${xRequestId ?? ''};ts:${ts};`
   const expected = createHmac('sha256', secret).update(manifest).digest('hex')
 
-  return expected === hash
+  // Comparação em tempo constante para evitar timing attack
+  if (expected.length !== hash.length) return false
+  let diff = 0
+  for (let i = 0; i < expected.length; i++) {
+    diff |= expected.charCodeAt(i) ^ hash.charCodeAt(i)
+  }
+  return diff === 0
 }
 
 const transporter = nodemailer.createTransport({

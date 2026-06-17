@@ -12,6 +12,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     signIn: '/login',
     error: '/login',
   },
+  // trustHost: necessário no Vercel para usar o header X-Forwarded-Host
+  // como base da URL de callback. Sem isso, NextAuth usa NEXTAUTH_URL=localhost
+  // e o Google rejeita o redirect com "redirect_uri_mismatch".
+  trustHost: true,
   callbacks: {
     async session({ session, token }) {
       return {
