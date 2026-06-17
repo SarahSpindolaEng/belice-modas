@@ -159,21 +159,24 @@ export default function CartPage() {
                     em ate 6x de {formatPrice(total / 6)}
                   </p>
                 )}
-                {/* LOJA TEMPORARIAMENTE FECHADA — remover este bloco quando estiver pronto */}
-                <div className="mt-6 border border-border bg-secondary/40 px-5 py-4 text-center">
-                  <p className="text-sm font-medium text-foreground">Loja em manutenção</p>
-                  <p className="mt-1 text-xs font-light text-muted-foreground">
-                    Em breve voltamos com novidades. Fale conosco pelo WhatsApp.
+                <FreteCalculator
+                  quantidade={totalItens}
+                  onSelect={setFreteOpcao}
+                  selected={freteOpcao}
+                />
+                <button
+                  type="button"
+                  onClick={irParaCheckout}
+                  disabled={!freteOpcao}
+                  className="mt-6 flex w-full items-center justify-center gap-2 bg-foreground px-6 py-4 text-xs uppercase tracking-widest text-background transition-colors hover:bg-gold-gradient hover:text-gold-foreground disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  Finalizar Compra <ArrowRight className="h-4 w-4" />
+                </button>
+                {!freteOpcao && (
+                  <p className="mt-2 text-center text-xs font-light text-muted-foreground">
+                    Calcule o frete para continuar
                   </p>
-                  <a
-                    href="https://wa.me/5562931451116"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-3 inline-flex items-center gap-2 bg-foreground px-5 py-2.5 text-xs uppercase tracking-widest text-background transition-colors hover:bg-gold-dark"
-                  >
-                    Falar no WhatsApp
-                  </a>
-                </div>
+                )}
                 <Link
                   href="/produtos"
                   className="mt-3 block text-center text-xs uppercase tracking-widest text-muted-foreground hover:text-gold-dark transition-colors"
