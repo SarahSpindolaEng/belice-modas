@@ -30,6 +30,7 @@ interface Order {
   cancelamento_solicitado: boolean
   cancelamento_motivo: string | null
   cancelamento_data: string | null
+  aceito: boolean
 }
 
 const STATUS_ENVIO_LABEL: Record<string, { label: string; color: string }> = {
@@ -40,6 +41,70 @@ const STATUS_ENVIO_LABEL: Record<string, { label: string; color: string }> = {
   tentativa_entrega: { label: 'Tentativa entrega',   color: 'bg-orange-100 text-orange-800'},
   entregue:          { label: 'Entregue',             color: 'bg-green-100 text-green-800'  },
   cancelado:         { label: 'Cancelado',            color: 'bg-red-100 text-red-800'      },
+}
+
+function BotoesAceite({
+  order,
+  onAtualizado,
+}: {
+  order: Order
+  onAtualizado: () => void
+}) {
+  const [loading, setLoading] = useState<'aceitar' | 'negar' | null>(null)
+  const [aviso, setAviso] = useState<string | null>(null)
+
+  async function agir(acao: 'aceitar' | 'negar') {
+    if (acao === 'negar' && !confirm('Negar este pedido vai cancelar e reembolsar a cliente. Confirmar?')) return
+    setLoading(acao)
+    setAviso(null)
+    try {
+      const res = await fetch('/api/admin/pedidos/acao', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ payment_id: order.payment_id, acao }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setAviso(data.error ?? 'Erro.')
+      } else {
+        if (data.aviso) setAviso(`Aviso reembolso: ${data.aviso}`)
+        onAtualizado()
+      }
+    } catch {
+      setAviso('Erro de conexão.')
+    } finally {
+      setLoading(null)
+    }
+  }
+
+  return (
+    <div className="mt-4 border border-gold bg-accent/30 p-4">
+      <p className="text-xs font-semibold uppercase tracking-widest text-foreground mb-3">
+        Pedido pago — aguardando sua aprovação
+      </p>
+      {aviso && <p className="mb-2 text-xs text-red-700">{aviso}</p>}
+      <div className="flex gap-3">
+        <button
+          type="button"
+          disabled={!!loading}
+          onClick={() => agir('aceitar')}
+          className="flex items-center gap-1.5 bg-foreground px-4 py-2 text-xs uppercase tracking-widest text-background hover:bg-gold-gradient hover:text-gold-foreground disabled:opacity-60"
+        >
+          {loading === 'aceitar' && <Loader2 className="h-3 w-3 animate-spin" />}
+          Aceitar pedido
+        </button>
+        <button
+          type="button"
+          disabled={!!loading}
+          onClick={() => agir('negar')}
+          className="flex items-center gap-1.5 border border-red-300 px-4 py-2 text-xs uppercase tracking-widest text-red-700 hover:bg-red-50 disabled:opacity-60"
+        >
+          {loading === 'negar' && <Loader2 className="h-3 w-3 animate-spin" />}
+          Negar e reembolsar
+        </button>
+      </div>
+    </div>
+  )
 }
 
 function BotoesReembolso({
@@ -240,6 +305,11 @@ export default function AdminPedidosPage() {
                       <span className={`rounded-full px-3 py-1 text-xs font-medium ${envio.color}`}>
                         {envio.label}
                       </span>
+                      {order.aceito && (
+                        <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800">
+                          Aceito ✓
+                        </span>
+                      )}
                       <span className="text-lg font-serif font-medium text-foreground">
                         {formatPrice(Number(order.total))}
                       </span>
@@ -281,6 +351,11 @@ export default function AdminPedidosPage() {
                       </span>
                     )}
                   </div>
+
+                  {/* aceitar / negar pedido pago */}
+                  {order.status === 'approved' && !order.aceito && order.status_envio !== 'cancelado' && !order.cancelamento_solicitado && (
+                    <BotoesAceite order={order} onAtualizado={carregarPedidos} />
+                  )}
 
                   {/* cancelamento pendente */}
                   {order.cancelamento_solicitado && order.status_envio !== 'cancelado' && (
