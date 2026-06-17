@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
 import { formatPrice } from '@/lib/products'
-import { Package, Truck, CheckCircle, Clock, XCircle, AlertCircle } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 
 interface OrderItem {
   title: string
@@ -27,6 +27,9 @@ interface Order {
   total: number
   items: OrderItem[]
   created_at: string
+  cancelamento_solicitado: boolean
+  cancelamento_motivo: string | null
+  cancelamento_data: string | null
 }
 
 const STATUS_ENVIO_LABEL: Record<string, { label: string; color: string }> = {
@@ -39,12 +42,100 @@ const STATUS_ENVIO_LABEL: Record<string, { label: string; color: string }> = {
   cancelado:         { label: 'Cancelado',            color: 'bg-red-100 text-red-800'      },
 }
 
+function BotoesReembolso({
+  order,
+  onAtualizado,
+}: {
+  order: Order
+  onAtualizado: () => void
+}) {
+  const [loading, setLoading] = useState<'aprovar' | 'rejeitar' | null>(null)
+  const [aviso, setAviso] = useState<string | null>(null)
+
+  async function agir(acao: 'aprovar' | 'rejeitar') {
+    setLoading(acao)
+    setAviso(null)
+    try {
+      const res = await fetch('/api/admin/pedidos/cancelar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ payment_id: order.payment_id, acao }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setAviso(data.error ?? 'Erro.')
+      } else {
+        if (data.aviso) setAviso(`Cancelado. Aviso reembolso: ${data.aviso}`)
+        onAtualizado()
+      }
+    } catch {
+      setAviso('Erro de conexão.')
+    } finally {
+      setLoading(null)
+    }
+  }
+
+  return (
+    <div className="mt-4 border border-orange-300 bg-orange-50 p-4">
+      <p className="text-xs font-semibold uppercase tracking-widest text-orange-800 mb-1">
+        ⚠ Solicitação de cancelamento
+      </p>
+      {order.cancelamento_data && (
+        <p className="text-xs text-orange-700 mb-1">
+          Solicitado em:{' '}
+          {new Date(order.cancelamento_data).toLocaleString('pt-BR', {
+            day: '2-digit', month: '2-digit', year: 'numeric',
+            hour: '2-digit', minute: '2-digit',
+          })}
+        </p>
+      )}
+      {order.cancelamento_motivo && (
+        <p className="text-sm text-orange-900 mb-3 italic">
+          &ldquo;{order.cancelamento_motivo}&rdquo;
+        </p>
+      )}
+      {aviso && <p className="mb-2 text-xs text-red-700">{aviso}</p>}
+      <div className="flex gap-3">
+        <button
+          type="button"
+          disabled={!!loading}
+          onClick={() => agir('aprovar')}
+          className="flex items-center gap-1.5 bg-red-600 px-4 py-2 text-xs uppercase tracking-widest text-white hover:bg-red-700 disabled:opacity-60"
+        >
+          {loading === 'aprovar' && <Loader2 className="h-3 w-3 animate-spin" />}
+          Aprovar e reembolsar
+        </button>
+        <button
+          type="button"
+          disabled={!!loading}
+          onClick={() => agir('rejeitar')}
+          className="flex items-center gap-1.5 border border-border px-4 py-2 text-xs uppercase tracking-widest text-foreground hover:bg-accent disabled:opacity-60"
+        >
+          {loading === 'rejeitar' && <Loader2 className="h-3 w-3 animate-spin" />}
+          Rejeitar
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export default function AdminPedidosPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [busca, setBusca] = useState('')
+  const [filtro, setFiltro] = useState<'todos' | 'cancelamentos'>('todos')
+
+  function carregarPedidos() {
+    fetch('/api/admin/pedidos')
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.error) { router.push('/'); return }
+        setOrders(d.orders ?? [])
+      })
+      .finally(() => setLoading(false))
+  }
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -52,17 +143,15 @@ export default function AdminPedidosPage() {
       return
     }
     if (status === 'authenticated') {
-      fetch('/api/admin/pedidos')
-        .then((r) => r.json())
-        .then((d) => {
-          if (d.error) { router.push('/'); return }
-          setOrders(d.orders ?? [])
-        })
-        .finally(() => setLoading(false))
+      carregarPedidos()
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, router])
 
+  const cancelamentosPendentes = orders.filter((o) => o.cancelamento_solicitado && o.status_envio !== 'cancelado').length
+
   const pedidosFiltrados = orders.filter((o) => {
+    if (filtro === 'cancelamentos') return o.cancelamento_solicitado && o.status_envio !== 'cancelado'
     if (!busca) return true
     const q = busca.toLowerCase()
     return (
@@ -79,20 +168,45 @@ export default function AdminPedidosPage() {
     <>
       <SiteHeader />
       <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-        <div className="mb-8 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="font-serif text-3xl text-foreground">Painel de Pedidos</h1>
             <p className="mt-1 text-sm text-muted-foreground">
               {orders.length} pedido{orders.length !== 1 ? 's' : ''} · Total: {formatPrice(totalGeral)}
             </p>
           </div>
-          <input
-            type="text"
-            placeholder="Buscar por email, ID ou rastreio..."
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-            className="border border-border bg-background px-4 py-2 text-sm focus:border-gold focus:outline-none sm:w-72"
-          />
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => { setFiltro('todos'); setBusca('') }}
+                className={`px-3 py-1.5 text-xs uppercase tracking-widest border ${filtro === 'todos' ? 'bg-foreground text-background border-foreground' : 'border-border text-muted-foreground hover:border-foreground'}`}
+              >
+                Todos
+              </button>
+              <button
+                type="button"
+                onClick={() => { setFiltro('cancelamentos'); setBusca('') }}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs uppercase tracking-widest border ${filtro === 'cancelamentos' ? 'bg-orange-600 text-white border-orange-600' : 'border-orange-300 text-orange-700 hover:bg-orange-50'}`}
+              >
+                Cancelamentos
+                {cancelamentosPendentes > 0 && (
+                  <span className="flex h-4 w-4 items-center justify-center rounded-full bg-orange-600 text-[10px] text-white font-bold" style={filtro === 'cancelamentos' ? { background: 'white', color: '#c2410c' } : {}}>
+                    {cancelamentosPendentes}
+                  </span>
+                )}
+              </button>
+            </div>
+            {filtro === 'todos' && (
+              <input
+                type="text"
+                placeholder="Buscar por email, ID ou rastreio..."
+                value={busca}
+                onChange={(e) => setBusca(e.target.value)}
+                className="border border-border bg-background px-4 py-2 text-sm focus:border-gold focus:outline-none sm:w-64"
+              />
+            )}
+          </div>
         </div>
 
         {loading ? (
@@ -109,7 +223,10 @@ export default function AdminPedidosPage() {
               })
 
               return (
-                <div key={order.id} className="border border-border bg-background p-5">
+                <div
+                  key={order.id}
+                  className={`border bg-background p-5 ${order.cancelamento_solicitado && order.status_envio !== 'cancelado' ? 'border-orange-300' : 'border-border'}`}
+                >
                   {/* cabeçalho */}
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
@@ -164,6 +281,11 @@ export default function AdminPedidosPage() {
                       </span>
                     )}
                   </div>
+
+                  {/* cancelamento pendente */}
+                  {order.cancelamento_solicitado && order.status_envio !== 'cancelado' && (
+                    <BotoesReembolso order={order} onAtualizado={carregarPedidos} />
+                  )}
                 </div>
               )
             })}

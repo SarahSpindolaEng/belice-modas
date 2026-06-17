@@ -23,9 +23,14 @@ export async function GET() {
       endereco,
       total,
       items,
-      created_at
+      created_at,
+      cancelamento_solicitado,
+      cancelamento_motivo,
+      cancelamento_data
     FROM orders
-    ORDER BY created_at DESC
+    ORDER BY
+      cancelamento_solicitado DESC,
+      created_at DESC
     LIMIT 500
   `
 
