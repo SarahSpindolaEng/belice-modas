@@ -98,6 +98,7 @@ export async function POST(req: NextRequest) {
         logo: s.company?.picture ?? null,
       }))
       .sort((a: any, b: any) => a.preco - b.preco)
+      .slice(0, 3) // mostra apenas as 3 mais baratas
 
     return NextResponse.json({ opcoes })
   } catch (err) {

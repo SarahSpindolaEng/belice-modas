@@ -122,11 +122,9 @@ export function FreteCalculator({ quantidade, onSelect, selected }: FreteCalcula
               )}
             >
               <div className="flex items-center gap-3">
-                {opcao.logo ? (
-                  <img src={opcao.logo} alt={opcao.transportadora} className="h-6 w-auto object-contain" />
-                ) : (
-                  <Truck className="h-5 w-5 shrink-0 text-muted-foreground" />
-                )}
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded bg-accent text-[10px] font-semibold uppercase text-foreground/70">
+                  {opcao.transportadora.slice(0, 2)}
+                </span>
                 <div>
                   <p className="text-sm font-light text-foreground">{opcao.nome}</p>
                   <p className="text-xs text-muted-foreground">
