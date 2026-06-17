@@ -4,28 +4,19 @@ import { useState } from 'react'
 import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
 import { PageBanner } from '@/components/page-banner'
-import { Phone, Mail, Clock, MessageCircle, Package } from 'lucide-react'
+import { Phone, Mail, Clock, MessageCircle, Package, Send } from 'lucide-react'
+
+const WHATSAPP = '5562931451116'
 
 export default function ContatoPage() {
   const [nome, setNome] = useState('')
-  const [email, setEmail] = useState('')
   const [mensagem, setMensagem] = useState('')
-  const [status, setStatus] = useState<'idle' | 'loading' | 'sent' | 'error'>('idle')
 
-  async function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    setStatus('loading')
-    try {
-      const res = await fetch('/api/contato', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nome, email, mensagem }),
-      })
-      if (!res.ok) throw new Error()
-      setStatus('sent')
-    } catch {
-      setStatus('error')
-    }
+    const texto = `Olá! Me chamo *${nome}*.\n\n${mensagem}`
+    const url = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(texto)}`
+    window.open(url, '_blank', 'noopener,noreferrer')
   }
 
   return (
@@ -81,7 +72,7 @@ export default function ContatoPage() {
 
               <div className="mt-8 flex gap-3">
                 <a
-                  href="https://wa.me/5562931451116"
+                  href={`https://wa.me/${WHATSAPP}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 bg-gold-gradient px-5 py-3 text-xs uppercase tracking-widest text-gold-foreground transition-opacity hover:opacity-90"
@@ -106,66 +97,62 @@ export default function ContatoPage() {
 
             {/* form */}
             <div className="bg-secondary/40 p-8">
-              {status === 'sent' ? (
-                <div className="flex h-full flex-col items-center justify-center text-center py-12">
-                  <h3 className="font-serif text-2xl text-foreground">Mensagem enviada!</h3>
-                  <p className="mt-3 font-light text-muted-foreground">
-                    Obrigado pelo contato. Retornaremos em breve.
+              <form onSubmit={handleSubmit} className="space-y-5">
+                <div>
+                  <h3 className="font-serif text-2xl text-foreground">Envie uma mensagem</h3>
+                  <p className="mt-1 text-sm font-light text-muted-foreground">
+                    Ao clicar em enviar, você será redirecionada para o WhatsApp com a mensagem já preenchida.
                   </p>
                 </div>
-              ) : (
-                <form onSubmit={handleSubmit} className="space-y-5">
-                  <h3 className="font-serif text-2xl text-foreground">Envie uma mensagem</h3>
-                  <div>
-                    <label className="mb-1.5 block text-xs uppercase tracking-wider text-muted-foreground">
-                      Nome
-                    </label>
-                    <input
-                      required
-                      type="text"
-                      value={nome}
-                      onChange={(e) => setNome(e.target.value)}
-                      className="w-full border border-input bg-background px-4 py-3 text-sm outline-none focus:border-gold"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-1.5 block text-xs uppercase tracking-wider text-muted-foreground">
-                      E-mail
-                    </label>
-                    <input
-                      required
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="w-full border border-input bg-background px-4 py-3 text-sm outline-none focus:border-gold"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-1.5 block text-xs uppercase tracking-wider text-muted-foreground">
-                      Mensagem
-                    </label>
-                    <textarea
-                      required
-                      rows={5}
-                      value={mensagem}
-                      onChange={(e) => setMensagem(e.target.value)}
-                      className="w-full resize-none border border-input bg-background px-4 py-3 text-sm outline-none focus:border-gold"
-                    />
-                  </div>
-                  {status === 'error' && (
-                    <p className="text-xs text-destructive">
-                      Erro ao enviar. Tente novamente ou entre em contato pelo WhatsApp.
-                    </p>
-                  )}
-                  <button
-                    type="submit"
-                    disabled={status === 'loading'}
-                    className="w-full bg-foreground py-4 text-xs uppercase tracking-widest text-background transition-colors hover:bg-gold-dark disabled:opacity-60"
+
+                <div>
+                  <label className="mb-1.5 block text-xs uppercase tracking-wider text-muted-foreground">
+                    Seu nome
+                  </label>
+                  <input
+                    required
+                    type="text"
+                    placeholder="Como podemos te chamar?"
+                    value={nome}
+                    onChange={(e) => setNome(e.target.value)}
+                    className="w-full border border-input bg-background px-4 py-3 text-sm outline-none focus:border-gold placeholder:text-muted-foreground/60"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1.5 block text-xs uppercase tracking-wider text-muted-foreground">
+                    Mensagem
+                  </label>
+                  <textarea
+                    required
+                    rows={5}
+                    placeholder="Escreva sua mensagem aqui..."
+                    value={mensagem}
+                    onChange={(e) => setMensagem(e.target.value)}
+                    className="w-full resize-none border border-input bg-background px-4 py-3 text-sm outline-none focus:border-gold placeholder:text-muted-foreground/60"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className="flex w-full items-center justify-center gap-2 bg-foreground py-4 text-xs uppercase tracking-widest text-background transition-colors hover:bg-gold-dark"
+                >
+                  <Send className="h-4 w-4" />
+                  Enviar pelo WhatsApp
+                </button>
+
+                <p className="text-center text-xs text-muted-foreground">
+                  Ou fale direto:{' '}
+                  <a
+                    href={`https://wa.me/${WHATSAPP}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-gold-dark underline underline-offset-2 hover:text-gold"
                   >
-                    {status === 'loading' ? 'Enviando...' : 'Enviar mensagem'}
-                  </button>
-                </form>
-              )}
+                    (62) 93145-1116
+                  </a>
+                </p>
+              </form>
             </div>
           </div>
         </section>
