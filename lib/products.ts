@@ -31,7 +31,7 @@ export interface Product {
   colors?: ColorOption[]
 }
 
-export type Subcategoria = 'calca' | 'bermuda' | 'saia'
+export type Subcategoria = 'calca' | 'bermuda' | 'saia' | 'jardineira'
 
 export const categories: { slug: Category; label: string }[] = [
   { slug: 'vestidos', label: 'Vestidos' },
@@ -44,6 +44,7 @@ export const territorialSubs: { slug: Subcategoria; label: string }[] = [
   { slug: 'calca', label: 'Calças' },
   { slug: 'bermuda', label: 'Bermudas' },
   { slug: 'saia', label: 'Saias' },
+  { slug: 'jardineira', label: 'Jardineiras' },
 ]
 
 // ── size helpers ──────────────────────────────────────────────────────────────
@@ -873,7 +874,7 @@ export const products: Product[] = [
     name: 'Jardineira Jeans Clara',
     category: 'territorial',
     categoryLabel: 'Marca Territorial',
-    subcategoria: 'calca',
+    subcategoria: 'jardineira',
     description: 'Jardineira jeans clara. Valor a confirmar.',
     longDescription: 'Jardineira jeans clara. Valor a confirmar.',
     price: 139.90,
@@ -965,7 +966,7 @@ export const products: Product[] = [
     name: 'Jardineira Jeans Escura',
     category: 'territorial',
     categoryLabel: 'Marca Territorial',
-    subcategoria: 'calca',
+    subcategoria: 'jardineira',
     description: 'Jardineira jeans escura. Valor a confirmar.',
     longDescription: 'Jardineira jeans escura. Valor a confirmar.',
     price: 139.90,
