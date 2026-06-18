@@ -143,7 +143,7 @@ export async function gerarEtiqueta(order: {
     options,
   })
   if (!cart.ok || !cart.data?.id) {
-    return { ok: false, erro: `Falha ao inserir no carrinho do Melhor Envio: ${cart.data?.message ?? (cart.text ? cart.text.slice(0, 200) : 'status ' + cart.status)}` }
+    return { ok: false, erro: `Falha ao inserir no carrinho (${getMEBase()}): ${cart.data?.message ?? (cart.text ? cart.text.slice(0, 200) : 'status ' + cart.status)}` }
   }
   const meId: string = cart.data.id
 
