@@ -160,18 +160,6 @@ export const products: Product[] = [
     ],
   },
   {
-    id: 'vestido-laise-rosa',
-    name: 'Vestido Laise Rosa',
-    category: 'vestidos',
-    categoryLabel: 'Vestidos',
-    description: 'Vestido midi em laise rosa. Preço a confirmar.',
-    longDescription: 'Vestido midi em laise rosa com detalhes delicados. Modelagem romântica e feminina. Preço em atualização.',
-    price: 0,
-    images: ['/products/real/produto-71.jpg'],
-    sizes: allSizes,
-    pendingPrice: true,
-  },
-  {
     id: 'vestido-cristal-marsala',
     name: 'Vestido Cristal',
     category: 'vestidos',
