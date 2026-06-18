@@ -565,10 +565,9 @@ export const products: Product[] = [
     subcategoria: 'bermuda',
     description: 'Macacão Short Jeans Territorial. Preço a confirmar.',
     longDescription: 'Macacão short em jeans da linha Territorial. Disponível em tamanho único.',
-    price: 0,
+    price: 139.90,
     images: ['/products/real/produto-80.jpg'],
     sizes: allSizes,
-    pendingPrice: true,
   },
   // ── NOVOS PRODUTOS (imagens a adicionar) ──────────────────────────────────────
   {
@@ -929,11 +928,10 @@ export const products: Product[] = [
     subcategoria: 'bermuda',
     description: 'Short ciclista. Valor a confirmar.',
     longDescription: 'Short ciclista. Valor a confirmar.',
-    price: 0,
+    price: 99.90,
     images: ['/products/catalogo/short-ciclista-1.jpg'],
     sizes: sizesPGG,
     isNew: true,
-    pendingPrice: true,
   },
   {
     id: 'short-mom',
