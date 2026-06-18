@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
+import { useRouter, usePathname } from 'next/navigation'
 import { ProductCard } from '@/components/product-card'
 import { categories, type Product, type Category } from '@/lib/products'
 import { cn } from '@/lib/utils'
@@ -20,6 +21,27 @@ export function CatalogGrid({
 }) {
   const [filter, setFilter] = useState<string>(activeCategory ?? 'todos')
   const [sort, setSort] = useState<SortKey>('destaque')
+  const router = useRouter()
+  const pathname = usePathname()
+
+  // Sincroniza a sub-categoria (Marca Territorial) com a URL (?sub=),
+  // pra voltar do produto cair na mesma aba.
+  useEffect(() => {
+    if (subFilters && typeof window !== 'undefined') {
+      const sub = new URLSearchParams(window.location.search).get('sub')
+      if (sub) setFilter(sub)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  function selectFilter(slug: string) {
+    setFilter(slug)
+    if (subFilters) {
+      router.replace(slug === 'todos' ? pathname : `${pathname}?sub=${slug}`, {
+        scroll: false,
+      })
+    }
+  }
 
   const visible = useMemo(() => {
     let list =
@@ -41,14 +63,14 @@ export function CatalogGrid({
       <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
         {subFilters || showFilters ? (
           <div className="flex flex-wrap gap-2">
-            <FilterChip active={filter === 'todos'} onClick={() => setFilter('todos')}>
+            <FilterChip active={filter === 'todos'} onClick={() => selectFilter('todos')}>
               Todos
             </FilterChip>
             {(subFilters ?? categories).map((cat) => (
               <FilterChip
                 key={cat.slug}
                 active={filter === cat.slug}
-                onClick={() => setFilter(cat.slug)}
+                onClick={() => selectFilter(cat.slug)}
               >
                 {cat.label}
               </FilterChip>
