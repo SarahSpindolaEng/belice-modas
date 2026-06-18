@@ -56,7 +56,7 @@ export function ProductDetail({ product }: { product: Product }) {
               fill
               priority
               sizes="(max-width: 1024px) 100vw, 50vw"
-              className="object-cover"
+              className="object-cover object-top"
             />
             {discount > 0 && (
               <span className="absolute left-4 top-4 bg-foreground px-3 py-1 text-[10px] font-medium uppercase tracking-widest text-background">
@@ -85,7 +85,7 @@ export function ProductDetail({ product }: { product: Product }) {
                   )}
                   aria-label={`Imagem ${i + 1}`}
                 >
-                  <Image src={img} alt="" fill sizes="80px" className="object-cover" />
+                  <Image src={img} alt="" fill sizes="80px" className="object-cover object-top" />
                 </button>
               ))}
             </div>
