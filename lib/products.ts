@@ -217,7 +217,7 @@ export const products: Product[] = [
     longDescription: 'Vestido Ester com modelagem elegante e feminina. Disponível do P ao G. Perfeito para diversas ocasiões.',
     price: 95,
     oldPrice: 124.90,
-    images: ['/products/real/produto-45.jpg', '/products/real/produto-112.jpg', '/products/real/produto-113.jpg'],
+    images: ['/products/catalogo/vestido-ester-floral-1.jpg'],
     sizes: sizesPG,
     isNew: true,
   },
@@ -263,7 +263,7 @@ export const products: Product[] = [
     longDescription: 'Vestido Miriam com manga 3/4 em tecido de qualidade. Modelagem elegante e confortável. Disponível do P ao G.',
     price: 95,
     oldPrice: 124.90,
-    images: ['/products/real/produto-52.jpg', '/products/real/produto-116.jpg', '/products/real/produto-117.jpg'],
+    images: ['/products/catalogo/vestido-miriam-3x4-1.jpg'],
     sizes: sizesPG,
   },
   {
