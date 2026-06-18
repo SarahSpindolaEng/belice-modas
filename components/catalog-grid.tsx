@@ -11,21 +11,23 @@ export function CatalogGrid({
   products,
   activeCategory,
   showFilters = true,
+  subFilters,
 }: {
   products: Product[]
   activeCategory?: Category
   showFilters?: boolean
+  subFilters?: { slug: string; label: string }[]
 }) {
-  const [filter, setFilter] = useState<Category | 'todos'>(
-    activeCategory ?? 'todos',
-  )
+  const [filter, setFilter] = useState<string>(activeCategory ?? 'todos')
   const [sort, setSort] = useState<SortKey>('destaque')
 
   const visible = useMemo(() => {
     let list =
       filter === 'todos'
         ? products
-        : products.filter((p) => p.category === filter)
+        : subFilters
+          ? products.filter((p) => p.subcategoria === filter)
+          : products.filter((p) => p.category === filter)
     list = [...list]
     if (sort === 'menor') list.sort((a, b) => a.price - b.price)
     if (sort === 'maior') list.sort((a, b) => b.price - a.price)
@@ -37,12 +39,12 @@ export function CatalogGrid({
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-14">
       <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-        {showFilters ? (
+        {subFilters || showFilters ? (
           <div className="flex flex-wrap gap-2">
             <FilterChip active={filter === 'todos'} onClick={() => setFilter('todos')}>
               Todos
             </FilterChip>
-            {categories.map((cat) => (
+            {(subFilters ?? categories).map((cat) => (
               <FilterChip
                 key={cat.slug}
                 active={filter === cat.slug}

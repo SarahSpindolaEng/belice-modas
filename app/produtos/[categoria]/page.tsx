@@ -3,7 +3,7 @@ import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
 import { PageBanner } from '@/components/page-banner'
 import { CatalogGrid } from '@/components/catalog-grid'
-import { products, categories, type Category } from '@/lib/products'
+import { products, categories, territorialSubs, type Category } from '@/lib/products'
 
 const subtitles: Record<Category, string> = {
   vestidos: 'Vestidos elegantes para todas as ocasiões, do casual ao sofisticado.',
@@ -41,7 +41,11 @@ export default async function CategoryPage({
             { label: cat.label },
           ]}
         />
-        <CatalogGrid products={filtered} showFilters={false} />
+        <CatalogGrid
+          products={filtered}
+          showFilters={false}
+          subFilters={cat.slug === 'territorial' ? territorialSubs : undefined}
+        />
       </main>
       <SiteFooter />
     </>

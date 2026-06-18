@@ -19,6 +19,7 @@ export interface Product {
   name: string
   category: Category
   categoryLabel: string
+  subcategoria?: Subcategoria
   description: string
   longDescription: string
   price: number
@@ -30,12 +31,19 @@ export interface Product {
   colors?: ColorOption[]
 }
 
+export type Subcategoria = 'calca' | 'bermuda' | 'saia'
+
 export const categories: { slug: Category; label: string }[] = [
   { slug: 'vestidos', label: 'Vestidos' },
-  { slug: 'calcas', label: 'Calças' },
   { slug: 'saias', label: 'Saias' },
-  { slug: 'bermudas', label: 'Bermudas' },
   { slug: 'territorial', label: 'Marca Territorial' },
+]
+
+// Sub-categorias exibidas dentro da Marca Territorial
+export const territorialSubs: { slug: Subcategoria; label: string }[] = [
+  { slug: 'calca', label: 'Calças' },
+  { slug: 'bermuda', label: 'Bermudas' },
+  { slug: 'saia', label: 'Saias' },
 ]
 
 // ── size helpers ──────────────────────────────────────────────────────────────
@@ -350,6 +358,7 @@ export const products: Product[] = [
     name: 'Saia Jeans',
     category: 'territorial',
     categoryLabel: 'Marca Territorial',
+    subcategoria: 'saia',
     description: 'Saia Jeans. Preço a confirmar.',
     longDescription: 'Saia em jeans com modelagem midi. Versátil para diversas ocasiões. Preço em atualização.',
     price: 99.90,
@@ -361,6 +370,7 @@ export const products: Product[] = [
     name: 'Saia Jeans',
     category: 'territorial',
     categoryLabel: 'Marca Territorial',
+    subcategoria: 'saia',
     description: 'Saia Jeans. Preço a confirmar.',
     longDescription: 'Saia em jeans com modelagem midi. Versátil para diversas ocasiões. Preço em atualização.',
     price: 99.90,
@@ -388,6 +398,7 @@ export const products: Product[] = [
     name: 'Calça Jeans',
     category: 'territorial',
     categoryLabel: 'Marca Territorial',
+    subcategoria: 'calca',
     description: 'Calça Jeans. Preço a confirmar.',
     longDescription: 'Calça jeans com corte moderno e modelagem que valoriza a silhueta. Preço em atualização.',
     price: 149.90,
@@ -397,8 +408,9 @@ export const products: Product[] = [
   {
     id: 'calca-estampada',
     name: 'Calça',
-    category: 'calcas',
-    categoryLabel: 'Calças',
+    category: 'territorial',
+    categoryLabel: 'Marca Territorial',
+    subcategoria: 'calca',
     description: 'Calça estampada. Preço a confirmar.',
     longDescription: 'Calça com estampa vibrante. Estilosa e confortável para o dia a dia. Preço em atualização.',
     price: 149.90,
@@ -410,6 +422,7 @@ export const products: Product[] = [
     name: 'Calça Preta',
     category: 'territorial',
     categoryLabel: 'Marca Territorial',
+    subcategoria: 'calca',
     description: 'Calça Preta. Preço a confirmar.',
     longDescription: 'Calça preta versátil e elegante. Disponível em tecido de qualidade. Preço em atualização.',
     price: 149.90,
@@ -422,6 +435,7 @@ export const products: Product[] = [
     name: 'Calça Jeans',
     category: 'territorial',
     categoryLabel: 'Marca Territorial',
+    subcategoria: 'calca',
     description: 'Calça Jeans. Preço a confirmar.',
     longDescription: 'Calça jeans com corte moderno e confortável. Preço em atualização.',
     price: 149.90,
@@ -433,6 +447,7 @@ export const products: Product[] = [
     name: 'Calça Jeans',
     category: 'territorial',
     categoryLabel: 'Marca Territorial',
+    subcategoria: 'calca',
     description: 'Calça Jeans. Preço a confirmar.',
     longDescription: 'Calça jeans com corte moderno. Preço em atualização.',
     price: 149.90,
@@ -444,6 +459,7 @@ export const products: Product[] = [
     name: 'Calça Jeans',
     category: 'territorial',
     categoryLabel: 'Marca Territorial',
+    subcategoria: 'calca',
     description: 'Calça Jeans. Preço a confirmar.',
     longDescription: 'Calça jeans versátil e estilosa. Preço em atualização.',
     price: 149.90,
@@ -455,6 +471,7 @@ export const products: Product[] = [
     name: 'Calça Jeans',
     category: 'territorial',
     categoryLabel: 'Marca Territorial',
+    subcategoria: 'calca',
     description: 'Calça Jeans. Preço a confirmar.',
     longDescription: 'Calça jeans de qualidade. Preço em atualização.',
     price: 149.90,
@@ -466,6 +483,7 @@ export const products: Product[] = [
     name: 'Calça Jeans',
     category: 'territorial',
     categoryLabel: 'Marca Territorial',
+    subcategoria: 'calca',
     description: 'Calça Jeans. Preço a confirmar.',
     longDescription: 'Calça jeans versátil. Preço em atualização.',
     price: 149.90,
@@ -477,6 +495,7 @@ export const products: Product[] = [
     name: 'Calça Jeans',
     category: 'territorial',
     categoryLabel: 'Marca Territorial',
+    subcategoria: 'calca',
     description: 'Calça Jeans. Preço a confirmar.',
     longDescription: 'Calça jeans de alta qualidade. Preço em atualização.',
     price: 149.90,
@@ -488,6 +507,7 @@ export const products: Product[] = [
     name: 'Calça Preta Territorial',
     category: 'territorial',
     categoryLabel: 'Marca Territorial',
+    subcategoria: 'calca',
     description: 'Calça Preta Territorial. Preço a confirmar.',
     longDescription: 'Calça preta da linha Territorial. Jeans de alta qualidade com corte reto. Preço em atualização.',
     price: 149.90,
@@ -499,6 +519,7 @@ export const products: Product[] = [
     name: 'Calça Jeans Azul Territorial',
     category: 'territorial',
     categoryLabel: 'Marca Territorial',
+    subcategoria: 'calca',
     description: 'Calça Jeans Azul Territorial. Preço a confirmar.',
     longDescription: 'Calça jeans azul da linha Territorial com detalhes exclusivos. Preço em atualização.',
     price: 149.90,
@@ -513,6 +534,7 @@ export const products: Product[] = [
     name: 'Bermuda Jeans',
     category: 'territorial',
     categoryLabel: 'Marca Territorial',
+    subcategoria: 'bermuda',
     description: 'Bermuda Jeans. Preço a confirmar.',
     longDescription: 'Bermuda jeans com modelagem confortável e estilosa. Preço em atualização.',
     price: 99.90,
@@ -524,6 +546,7 @@ export const products: Product[] = [
     name: 'Bermuda Jeans',
     category: 'territorial',
     categoryLabel: 'Marca Territorial',
+    subcategoria: 'bermuda',
     description: 'Bermuda Jeans. Preço a confirmar.',
     longDescription: 'Bermuda jeans versátil para o dia a dia. Preço em atualização.',
     price: 99.90,
@@ -538,6 +561,7 @@ export const products: Product[] = [
     name: 'Macacão Short Jeans Territorial',
     category: 'territorial',
     categoryLabel: 'Marca Territorial',
+    subcategoria: 'bermuda',
     description: 'Macacão Short Jeans Territorial. Preço a confirmar.',
     longDescription: 'Macacão short em jeans da linha Territorial. Disponível em tamanho único.',
     price: 0,
@@ -849,6 +873,7 @@ export const products: Product[] = [
     name: 'Jardineira Jeans Clara',
     category: 'territorial',
     categoryLabel: 'Marca Territorial',
+    subcategoria: 'calca',
     description: 'Jardineira jeans clara. Valor a confirmar.',
     longDescription: 'Jardineira jeans clara. Valor a confirmar.',
     price: 0,
@@ -862,6 +887,7 @@ export const products: Product[] = [
     name: 'Short Meia Coxa',
     category: 'territorial',
     categoryLabel: 'Marca Territorial',
+    subcategoria: 'bermuda',
     description: 'Short jeans meia coxa. Do 38 ao 46.',
     longDescription: 'Short jeans meia coxa. Do 38 ao 46.',
     price: 99.9,
@@ -874,6 +900,7 @@ export const products: Product[] = [
     name: 'Calça Cigarrete Marinho Escuro',
     category: 'territorial',
     categoryLabel: 'Marca Territorial',
+    subcategoria: 'calca',
     description: 'Calça cigarrete marinho escuro. Do 38 ao 46.',
     longDescription: 'Calça cigarrete marinho escuro. Do 38 ao 46.',
     price: 149.9,
@@ -886,6 +913,7 @@ export const products: Product[] = [
     name: 'Bermuda Jeans Clara',
     category: 'territorial',
     categoryLabel: 'Marca Territorial',
+    subcategoria: 'bermuda',
     description: 'Bermuda jeans clara. Do 38 ao 46.',
     longDescription: 'Bermuda jeans clara. Do 38 ao 46.',
     price: 99.9,
@@ -896,8 +924,9 @@ export const products: Product[] = [
   {
     id: 'short-ciclista',
     name: 'Short Ciclista',
-    category: 'bermudas',
-    categoryLabel: 'Bermudas',
+    category: 'territorial',
+    categoryLabel: 'Marca Territorial',
+    subcategoria: 'bermuda',
     description: 'Short ciclista. Valor a confirmar.',
     longDescription: 'Short ciclista. Valor a confirmar.',
     price: 0,
@@ -911,6 +940,7 @@ export const products: Product[] = [
     name: 'Short Mom',
     category: 'territorial',
     categoryLabel: 'Marca Territorial',
+    subcategoria: 'bermuda',
     description: 'Short mom jeans. Do 38 ao 46.',
     longDescription: 'Short mom jeans. Do 38 ao 46.',
     price: 99.9,
@@ -923,6 +953,7 @@ export const products: Product[] = [
     name: 'Calça Cigarrete Preta',
     category: 'territorial',
     categoryLabel: 'Marca Territorial',
+    subcategoria: 'calca',
     description: 'Calça cigarrete preta. Do 38 ao 46.',
     longDescription: 'Calça cigarrete preta. Do 38 ao 46.',
     price: 149.9,
@@ -935,6 +966,7 @@ export const products: Product[] = [
     name: 'Jardineira Jeans Escura',
     category: 'territorial',
     categoryLabel: 'Marca Territorial',
+    subcategoria: 'calca',
     description: 'Jardineira jeans escura. Valor a confirmar.',
     longDescription: 'Jardineira jeans escura. Valor a confirmar.',
     price: 0,
@@ -948,6 +980,7 @@ export const products: Product[] = [
     name: 'Mini Saia Jeans',
     category: 'territorial',
     categoryLabel: 'Marca Territorial',
+    subcategoria: 'saia',
     description: 'Mini saia jeans. Do 38 ao 46.',
     longDescription: 'Mini saia jeans. Do 38 ao 46.',
     price: 99.9,
@@ -960,6 +993,7 @@ export const products: Product[] = [
     name: 'Saia Jeans Territorial',
     category: 'territorial',
     categoryLabel: 'Marca Territorial',
+    subcategoria: 'saia',
     description: 'Saia jeans Territorial. Do 38 ao 46.',
     longDescription: 'Saia jeans Territorial. Do 38 ao 46.',
     price: 99.9,
