@@ -121,10 +121,14 @@ export const products: Product[] = [
     categoryLabel: 'Vestidos',
     description: 'Vestido midi em tule verde com poá. Do P ao G.',
     longDescription: 'Vestido midi em tule verde escuro com poá, manga bufante e babado em camadas. Elegante e sofisticado para eventos especiais. Disponível do P ao G.',
-    price: 80,
+    price: 75,
     oldPrice: 109.90,
     images: ['/products/real/produto-08.jpg', '/products/real/produto-93.jpg'],
     sizes: sizesPG,
+    colors: [
+      { label: 'Verde Militar', hex: '#4B5320', imageIndex: 0, sizes: sizesPG },
+      { label: 'Preto', hex: '#1A1A1A', imageIndex: 0, sizes: sizesPG },
+    ],
   },
   {
     id: 'vestido-lese-miriam-vinho',
@@ -156,8 +160,8 @@ export const products: Product[] = [
     sizes: sizesPG1,
     isNew: true,
     colors: [
-      { label: 'Rosa', hex: '#E8A0B0', imageIndex: 0 },
-      { label: 'Azul', hex: '#1B3A5C', imageIndex: 2 },
+      { label: 'Rosa Bebê', hex: '#F4C2C2', imageIndex: 0, sizes: sizesPG1 },
+      { label: 'Azul', hex: '#1B3A5C', imageIndex: 2, sizes: sizesPG1 },
     ],
   },
   {
@@ -243,8 +247,8 @@ export const products: Product[] = [
     images: ['/products/real/produto-47.jpg', '/products/real/produto-48.jpg'],
     sizes: sizesPG1,
     colors: [
-      { label: 'Vermelho', hex: '#B22222', imageIndex: 0 },
-      { label: 'Rosa', hex: '#E8A0B0', imageIndex: 1 },
+      { label: 'Vinho', hex: '#5E1A2B', imageIndex: 0, sizes: sizesPG1 },
+      { label: 'Rose', hex: '#E8A0B0', imageIndex: 1, sizes: sizesPG1 },
     ],
   },
   {
@@ -256,12 +260,12 @@ export const products: Product[] = [
     longDescription: 'Vestido Midi em lese com elegância e sofisticação. Disponível do P ao G1. Versão marinho disponível do P ao GG.',
     price: 80,
     oldPrice: 109.90,
-    images: ['/products/real/produto-50.jpg', '/products/real/produto-51.jpg', '/products/real/produto-104.jpg', '/products/real/produto-105.jpg', '/products/real/produto-106.jpg'],
+    images: ['/products/real/produto-50.jpg', '/products/real/produto-51.jpg', '/products/real/produto-104.jpg'],
     sizes: sizesPG1,
     isNew: true,
     colors: [
-      { label: 'Azul Claro', hex: '#7BA7C2', imageIndex: 0 },
-      { label: 'Azul Escuro', hex: '#0D1B3E', imageIndex: 1 },
+      { label: 'Azul Claro', hex: '#7BA7C2', imageIndex: 0, sizes: sizesPG1 },
+      { label: 'Azul Escuro', hex: '#0D1B3E', imageIndex: 1, sizes: ['P', 'M', 'GG'] },
     ],
   },
   {
@@ -345,7 +349,7 @@ export const products: Product[] = [
     categoryLabel: 'Vestidos',
     description: 'Vestido Tule Pérola. Do P ao EXG.',
     longDescription: 'Vestido em tule Pérola com acabamentos sofisticados. Disponível do P ao EXG (P, M, G, GG, G1 e EXG). Para eventos e ocasiões especiais.',
-    price: 110,
+    price: 115,
     oldPrice: 144.90,
     images: ['/products/real/produto-78.jpg'],
     sizes: sizesPEXG,
@@ -401,7 +405,7 @@ export const products: Product[] = [
     categoryLabel: 'Saias',
     description: 'Saia de Lese preta. Do P ao GG.',
     longDescription: 'Saia midi em lese preta com babado na barra. Cintura elástica confortável. Uma peça versátil que eleva qualquer look com sofisticação. Disponível do P ao GG.',
-    price: 55,
+    price: 59,
     oldPrice: 74.90,
     images: ['/products/real/produto-82.jpg', '/products/real/produto-128.jpg', '/products/real/produto-129.jpg'],
     sizes: allSizes,
