@@ -1,9 +1,11 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import {
+  ArrowLeft,
   Heart,
   ZoomIn,
   ShoppingBag,
@@ -20,6 +22,15 @@ import { cn } from '@/lib/utils'
 
 export function ProductDetail({ product }: { product: Product }) {
   const { addToCart, toggleFavorite, isFavorite } = useCart()
+  const router = useRouter()
+
+  function handleVoltar() {
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+      router.back()
+    } else {
+      router.push('/produtos')
+    }
+  }
   const [activeImg, setActiveImg] = useState(0)
   const [activeColor, setActiveColor] = useState<ColorOption | null>(product.colors?.[0] ?? null)
   const [size, setSize] = useState<Size | null>(null)
@@ -46,6 +57,13 @@ export function ProductDetail({ product }: { product: Product }) {
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
+      <button
+        type="button"
+        onClick={handleVoltar}
+        className="mb-6 inline-flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground transition-colors hover:text-gold-dark"
+      >
+        <ArrowLeft className="h-4 w-4" /> Voltar ao catálogo
+      </button>
       <div className="grid gap-10 lg:grid-cols-2">
         {/* gallery */}
         <div>
