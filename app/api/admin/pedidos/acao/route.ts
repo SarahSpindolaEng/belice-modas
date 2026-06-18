@@ -89,16 +89,11 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    // Etiqueta falhou — aceita mesmo assim, admin gera manualmente.
-    await sql`
-      UPDATE orders SET aceito = true, status_envio = 'aguardando_envio'
-      WHERE payment_id = ${payment_id}
-    `
-    return NextResponse.json({
-      ok: true,
-      mensagem: 'Pedido aceito.',
-      aviso: `Etiqueta não foi gerada automaticamente: ${etiqueta.erro} — gere manualmente no painel do Melhor Envio.`,
-    })
+    // Etiqueta falhou — NAO marca como aceito; mostra o erro pro admin corrigir e tentar de novo.
+    return NextResponse.json(
+      { error: `Não foi possível gerar a etiqueta: ${etiqueta.erro}` },
+      { status: 502 },
+    )
   }
 
   // acao === 'negar' → reembolso + cancelamento
