@@ -1,8 +1,12 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/auth'
 import sql from '@/lib/db'
+import { rateLimit, getIp } from '@/lib/rate-limit'
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const { allowed } = await rateLimit(getIp(req), { maxRequests: 60, windowMs: 60_000 })
+  if (!allowed) return NextResponse.json({ error: 'Muitas requisições.' }, { status: 429 })
+
   const session = await auth()
 
   if (!session?.user?.email) {

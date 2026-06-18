@@ -23,7 +23,11 @@ const STATUS_MAP: Record<string, string> = {
 function verificarSecreta(req: NextRequest): boolean {
   const secret = process.env.MELHOR_ENVIO_WEBHOOK_SECRET
   if (!secret) {
-    console.warn('MELHOR_ENVIO_WEBHOOK_SECRET não configurado — webhook sem proteção!')
+    if (process.env.NODE_ENV === 'production') {
+      console.error('MELHOR_ENVIO_WEBHOOK_SECRET ausente em producao — webhook recusado. Configure a variavel no Vercel.')
+      return false
+    }
+    console.warn('MELHOR_ENVIO_WEBHOOK_SECRET nao configurado (dev) — aceitando sem validar.')
     return true
   }
   // Prefere o header (nao para em logs de acesso como a query string).

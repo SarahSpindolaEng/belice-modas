@@ -38,9 +38,25 @@ export async function POST(req: NextRequest) {
       ? body.endereco.replace(/[<>]/g, '').trim().slice(0, 500)
       : null
     // Dados estruturados de envio (para gerar a etiqueta depois). Limita tamanho por seguranca.
+    const limpar = (v: unknown) =>
+      typeof v === 'string' ? v.replace(/[<>]/g, '').trim().slice(0, 120) : ''
+    const de = body.dadosEnvio
     const dadosEnvio =
-      body.dadosEnvio && typeof body.dadosEnvio === 'object'
-        ? JSON.parse(JSON.stringify(body.dadosEnvio).slice(0, 2000))
+      de && typeof de === 'object'
+        ? {
+            nome: limpar(de.nome),
+            cpf: limpar(de.cpf),
+            telefone: limpar(de.telefone),
+            cep: limpar(de.cep),
+            rua: limpar(de.rua),
+            numero: limpar(de.numero),
+            complemento: limpar(de.complemento),
+            bairro: limpar(de.bairro),
+            cidade: limpar(de.cidade),
+            estado: limpar(de.estado),
+            frete_service_id: Number(de.frete_service_id) || null,
+            frete_nome: limpar(de.frete_nome),
+          }
         : null
 
     if (!Array.isArray(items) || items.length === 0) {
