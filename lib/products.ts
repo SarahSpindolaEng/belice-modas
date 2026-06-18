@@ -223,8 +223,8 @@ export const products: Product[] = [
     images: ['/products/catalogo/vestido-lese-miriam-rose-1.jpg', '/products/catalogo/vestido-lese-miriam-rose-2.jpg'],
     sizes: sizesPG1,
     colors: [
-      { label: 'Vinho', hex: '#5E1A2B', imageIndex: 0, sizes: sizesPG1 },
-      { label: 'Rose', hex: '#E8A0B0', imageIndex: 1, sizes: sizesPG1 },
+      { label: 'Rose', hex: '#E8A0B0', imageIndex: 0, sizes: sizesPG1 },
+      { label: 'Vinho', hex: '#5E1A2B', imageIndex: 1, sizes: sizesPG1 },
     ],
   },
   {
@@ -281,8 +281,9 @@ export const products: Product[] = [
     images: ['/products/catalogo/vestido-algodao-aplicacao-1.jpg', '/products/catalogo/vestido-algodao-aplicacao-2.jpg', '/products/catalogo/vestido-algodao-aplicacao-3.jpg', '/products/catalogo/vestido-algodao-aplicacao-4.jpg', '/products/catalogo/vestido-algodao-aplicacao-5.jpg'],
     sizes: sizesPGG,
     colors: [
-      { label: 'Azul', hex: '#1B3A5C', imageIndex: 0, sizes: sizesPGG },
-      { label: 'Vinho', hex: '#5E1A2B', imageIndex: 3, sizes: ['M', 'G', 'GG'] },
+      { label: 'Estampa Flor Azul', hex: '#1CB5C4', imageIndex: 1, sizes: sizesPGG },
+      { label: 'Estampa Vermelha', hex: '#B22222', imageIndex: 2, sizes: ['M', 'G', 'GG'] },
+      { label: 'Estampa Borboleta', hex: '#7A2E3A', imageIndex: 3, sizes: ['M', 'G', 'GG'] },
     ],
   },
   {
@@ -584,7 +585,7 @@ export const products: Product[] = [
   },
   {
     id: 'vestido-algodao',
-    name: 'Vestido Algodão',
+    name: 'Vestido Algodão Pink',
     category: 'vestidos',
     categoryLabel: 'Vestidos',
     description: 'Vestido em algodão. Do P ao GG.',
