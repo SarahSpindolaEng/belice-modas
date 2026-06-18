@@ -19,6 +19,7 @@ function ensureSchema() {
       sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS dados_envio jsonb`,
       sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS preference_id text`,
       sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS label_url text`,
+      sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS label_erro text`,
     ])
   }
   return schemaReady
@@ -78,7 +79,8 @@ export async function POST(req: NextRequest) {
           status_envio = 'etiqueta_gerada',
           tracking_code = COALESCE(${etiqueta.tracking ?? null}, tracking_code),
           melhor_envio_id = COALESCE(${etiqueta.melhorEnvioId ?? null}, melhor_envio_id),
-          label_url = ${etiqueta.labelUrl ?? null}
+          label_url = ${etiqueta.labelUrl ?? null},
+          label_erro = NULL
         WHERE payment_id = ${payment_id}
       `
       return NextResponse.json({
@@ -90,6 +92,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Etiqueta falhou — NAO marca como aceito; mostra o erro pro admin corrigir e tentar de novo.
+    await sql`UPDATE orders SET label_erro = ${etiqueta.erro ?? 'erro desconhecido'} WHERE payment_id = ${payment_id}`
     return NextResponse.json(
       { error: `Não foi possível gerar a etiqueta: ${etiqueta.erro}` },
       { status: 502 },
