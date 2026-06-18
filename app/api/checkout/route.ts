@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { mpAccessToken } from '@/lib/mp'
 import { MercadoPagoConfig, Preference } from 'mercadopago'
 import { products } from '@/lib/products'
 import { rateLimit, getIp } from '@/lib/rate-limit'
 import sql from '@/lib/db'
 
 const client = new MercadoPagoConfig({
-  accessToken: process.env.MP_ACCESS_TOKEN!,
+  accessToken: mpAccessToken(),
 })
 
 // Colunas para a etiqueta (migração lazy, idempotente).

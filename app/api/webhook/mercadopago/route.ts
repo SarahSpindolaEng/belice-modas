@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { mpAccessToken } from '@/lib/mp'
 import { MercadoPagoConfig, Payment } from 'mercadopago'
 import { createHmac } from 'crypto'
 import nodemailer from 'nodemailer'
 import sql from '@/lib/db'
 
 const client = new MercadoPagoConfig({
-  accessToken: process.env.MP_ACCESS_TOKEN!,
+  accessToken: mpAccessToken(),
 })
 
 // Escapa HTML para evitar injecao no email de notificacao

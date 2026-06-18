@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/auth'
+import { mpAccessToken } from '@/lib/mp'
 import { MercadoPagoConfig, Payment } from 'mercadopago'
 import sql from '@/lib/db'
 import { rateLimit, getIp } from '@/lib/rate-limit'
 import { isAdmin } from '@/lib/admin-emails'
 
 const client = new MercadoPagoConfig({
-  accessToken: process.env.MP_ACCESS_TOKEN!,
+  accessToken: mpAccessToken(),
 })
 
 export async function POST(req: NextRequest) {

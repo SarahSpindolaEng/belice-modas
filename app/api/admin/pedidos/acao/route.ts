@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/auth'
+import { mpAccessToken } from '@/lib/mp'
 import { MercadoPagoConfig, Payment } from 'mercadopago'
 import sql from '@/lib/db'
 import { rateLimit, getIp } from '@/lib/rate-limit'
@@ -7,7 +8,7 @@ import { isAdmin } from '@/lib/admin-emails'
 import { gerarEtiqueta } from '@/lib/melhor-envio-etiqueta'
 
 const client = new MercadoPagoConfig({
-  accessToken: process.env.MP_ACCESS_TOKEN!,
+  accessToken: mpAccessToken(),
 })
 
 // Garante colunas auxiliares (migração lazy, idempotente).
