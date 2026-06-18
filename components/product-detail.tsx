@@ -31,6 +31,8 @@ export function ProductDetail({ product }: { product: Product }) {
   const discount = product.oldPrice
     ? Math.round((1 - product.price / product.oldPrice) * 100)
     : 0
+  // Se a cor selecionada define tamanhos proprios, usa eles; senao usa os do produto.
+  const sizesDisponiveis = activeColor?.sizes ?? product.sizes
 
   function handleAdd() {
     if (!size) {
@@ -132,6 +134,8 @@ export function ProductDetail({ product }: { product: Product }) {
                     onClick={() => {
                       setActiveColor(c)
                       setActiveImg(c.imageIndex)
+                      setSize(null)
+                      setError(false)
                     }}
                     className={cn(
                       'h-9 w-9 rounded-full border-2 transition-all',
@@ -152,7 +156,7 @@ export function ProductDetail({ product }: { product: Product }) {
               Tamanho
             </p>
             <div className="mt-3 flex gap-3">
-              {product.sizes.map((s) => (
+              {sizesDisponiveis.map((s) => (
                 <button
                   key={s}
                   type="button"

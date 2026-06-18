@@ -11,6 +11,7 @@ export interface ColorOption {
   label: string
   hex: string
   imageIndex: number
+  sizes?: Size[] // tamanhos disponiveis especificamente para esta cor (opcional)
 }
 
 export interface Product {
