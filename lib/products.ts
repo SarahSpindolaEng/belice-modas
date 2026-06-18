@@ -326,22 +326,6 @@ export const products: Product[] = [
     isNew: true,
   },
   {
-    id: 'vestido-midi-tule-malu',
-    name: 'Vestido Midi Tule Malu',
-    category: 'vestidos',
-    categoryLabel: 'Vestidos',
-    description: 'Vestido Midi Tule Malu. Preço e tamanhos a confirmar.',
-    longDescription: 'Vestido Midi em tule Malu com acabamentos delicados. Preço e grade de tamanhos em atualização.',
-    price: 0,
-    images: ['/products/real/produto-66.jpg', '/products/real/produto-122.jpg', '/products/real/produto-123.jpg'],
-    sizes: allSizes,
-    pendingPrice: true,
-    colors: [
-      { label: 'Azul Escuro', hex: '#0D1B3E', imageIndex: 0 },
-      { label: 'Vermelho', hex: '#B22222', imageIndex: 2 },
-    ],
-  },
-  {
     id: 'vestido-cristal-gode',
     name: 'Vestido Cristal',
     category: 'vestidos',
