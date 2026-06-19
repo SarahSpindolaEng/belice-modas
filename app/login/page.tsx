@@ -8,7 +8,7 @@ import Link from 'next/link'
 
 function LoginForm() {
   const searchParams = useSearchParams()
-  const callbackUrl = searchParams.get('callbackUrl') ?? '/'
+  const callbackUrl = searchParams.get('callbackUrl') ?? '/produtos'
   const error = searchParams.get('error')
   const [loading, setLoading] = useState(false)
 

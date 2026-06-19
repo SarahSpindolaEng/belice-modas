@@ -27,7 +27,7 @@ export default function CadastroPage() {
 
   async function handleGoogle() {
     setLoading(true)
-    await signIn('google', { callbackUrl: '/' })
+    await signIn('google', { callbackUrl: '/produtos' })
   }
 
   return (
