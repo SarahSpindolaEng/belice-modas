@@ -130,7 +130,7 @@ export function ProductDetail({ product }: { product: Product }) {
             )}
           </div>
           <p className="mt-1 text-sm font-light text-gold-dark">
-            ou 6x de {formatPrice(product.price / 6)} sem juros
+            em até 12x no cartão
           </p>
 
           <p className="mt-6 font-light leading-relaxed text-foreground/80">

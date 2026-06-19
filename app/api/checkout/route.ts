@@ -100,6 +100,7 @@ export async function POST(req: NextRequest) {
           pending: `${appUrl}/pedido/confirmacao?status=pending`,
         },
         auto_return: 'approved',
+        payment_methods: { installments: 12 },
         statement_descriptor: 'BELICE MODAS',
         notification_url: `${appUrl}/api/webhook/mercadopago`,
       },

@@ -14,7 +14,7 @@ type Method = 'pix' | 'credito' | 'debito' | 'boleto'
 
 const methods: { id: Method; label: string; icon: typeof QrCode; note: string }[] = [
   { id: 'pix', label: 'Pix', icon: QrCode, note: '5% de desconto à vista' },
-  { id: 'credito', label: 'Cartão de Crédito', icon: CreditCard, note: 'Parcele em até 6x sem juros' },
+  { id: 'credito', label: 'Cartão de Crédito', icon: CreditCard, note: 'Parcele em até 12x' },
   { id: 'debito', label: 'Cartão de Débito', icon: Landmark, note: 'Aprovação imediata' },
   { id: 'boleto', label: 'Boleto Bancário', icon: Barcode, note: 'Vence em 3 dias úteis' },
 ]
@@ -95,7 +95,7 @@ export default function PaymentPage() {
                         <select className="mt-2 w-full border border-border bg-background px-4 py-3 text-sm font-light focus:border-gold focus:outline-none">
                           {[1, 2, 3, 4, 5, 6].map((n) => (
                             <option key={n} value={n}>
-                              {n}x de {formatPrice(subtotal / n)} sem juros
+                              {n}x no cartão
                             </option>
                           ))}
                         </select>

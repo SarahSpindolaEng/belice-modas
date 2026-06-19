@@ -156,7 +156,7 @@ export default function CartPage() {
                 </div>
                 {frete !== null && (
                   <p className="mt-1 text-right text-xs font-light text-gold-dark">
-                    em ate 6x de {formatPrice(total / 6)}
+                    em até 12x no cartão
                   </p>
                 )}
                 <FreteCalculator

@@ -22,7 +22,7 @@ export default function HomePage() {
         <section className="border-b border-border">
           <div className="mx-auto flex max-w-3xl flex-wrap justify-center gap-x-16 gap-y-6 px-4 py-10 sm:px-6">
             {[
-              { icon: CreditCard, title: 'Parcele em 6x', desc: 'Sem juros no cartão' },
+              { icon: CreditCard, title: 'Parcele em até 12x', desc: 'No cartão de crédito' },
               { icon: RefreshCcw, title: 'Troca Fácil', desc: 'Até 30 dias' },
               { icon: ShieldCheck, title: 'Compra Segura', desc: 'Ambiente protegido' },
             ].map((b) => (
