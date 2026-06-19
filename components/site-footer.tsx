@@ -71,7 +71,7 @@ export function SiteFooter() {
             <ul className="space-y-2.5 text-sm font-light text-background/70">
               <li className="flex items-center gap-2">
                 <MessageCircle className="h-4 w-4 text-gold" />
-                (62) 93145-1116
+                (62) 99314-5116
               </li>
               <li className="flex items-center gap-2">
                 <Mail className="h-4 w-4 text-gold" />
@@ -88,7 +88,7 @@ export function SiteFooter() {
                   <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
                 </svg>
               </a>
-              <a href="https://wa.me/5562931451116" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp" className="text-background/70 hover:text-gold transition-colors">
+              <a href="https://wa.me/5562993145116" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp" className="text-background/70 hover:text-gold transition-colors">
                 <MessageCircle className="h-5 w-5" />
               </a>
             </div>

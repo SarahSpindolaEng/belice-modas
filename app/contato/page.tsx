@@ -6,7 +6,7 @@ import { SiteFooter } from '@/components/site-footer'
 import { PageBanner } from '@/components/page-banner'
 import { Phone, Mail, Clock, MessageCircle, Package, Send } from 'lucide-react'
 
-const WHATSAPP = '5562931451116'
+const WHATSAPP = '5562993145116'
 
 export default function ContatoPage() {
   const [nome, setNome] = useState('')
@@ -44,7 +44,7 @@ export default function ContatoPage() {
                   <Phone className="mt-1 h-5 w-5 shrink-0 text-gold-dark" />
                   <div>
                     <p className="text-sm font-medium text-foreground">Telefone / WhatsApp</p>
-                    <p className="text-sm font-light text-muted-foreground">(62) 93145-1116</p>
+                    <p className="text-sm font-light text-muted-foreground">(62) 99314-5116</p>
                   </div>
                 </li>
                 <li className="flex items-start gap-4">
@@ -149,7 +149,7 @@ export default function ContatoPage() {
                     rel="noopener noreferrer"
                     className="text-gold-dark underline underline-offset-2 hover:text-gold"
                   >
-                    (62) 93145-1116
+                    (62) 99314-5116
                   </a>
                 </p>
               </form>
