@@ -268,7 +268,7 @@ export function ProductDetail({ product }: { product: Product }) {
           {/* benefits */}
           <div className="mt-8 grid gap-4 border-t border-border pt-6 sm:grid-cols-3">
             {[
-              { icon: RefreshCcw, label: 'Troca facil em ate 30 dias' },
+              { icon: RefreshCcw, label: 'Troca fácil em até 7 dias' },
               { icon: ShieldCheck, label: 'Pagamento 100% seguro' },
             ].map((b) => (
               <div key={b.label} className="flex items-center gap-2">

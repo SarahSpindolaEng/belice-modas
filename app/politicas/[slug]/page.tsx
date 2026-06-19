@@ -16,7 +16,7 @@ const policies: Record<
       {
         heading: 'Prazo para troca',
         body: [
-          'Você tem até 30 dias corridos a partir do recebimento do produto para solicitar a troca ou devolução.',
+          'Você tem até 7 dias corridos a partir do recebimento do produto para solicitar a troca ou devolução (direito de arrependimento, conforme o Código de Defesa do Consumidor).',
           'A peça deve estar sem sinais de uso, com a etiqueta original e na embalagem.',
         ],
       },
