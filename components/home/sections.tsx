@@ -28,7 +28,7 @@ export function CategoryGrid() {
   return (
     <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-20">
       <SectionTitle eyebrow="Explore" title="Nossas Categorias" />
-      <div className="mt-10 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
+      <div className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-3 max-w-5xl mx-auto">
         {categories.map((cat) => (
           <Link
             key={cat.slug}
