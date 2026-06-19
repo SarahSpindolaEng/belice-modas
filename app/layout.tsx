@@ -33,9 +33,20 @@ const bodoniModa = Bodoni_Moda({
 })
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://www.belice.com.br'),
   title: 'Belice Modas — Moda Feminina Premium',
   description:
     'Belice Modas — vestidos, calças, saias, bermudas e marca territorial. Moda feminina elegante com até 40% OFF. Layout premium inspirado em luxo.',
+  alternates: { canonical: 'https://www.belice.com.br' },
+  openGraph: {
+    type: 'website',
+    url: 'https://www.belice.com.br',
+    siteName: 'Belice Modas',
+    title: 'Belice Modas — Moda Feminina Premium',
+    description:
+      'Belice Modas — moda feminina elegante. Vestidos, saias e a linha Marca Territorial.',
+    locale: 'pt_BR',
+  },
   icons: {
     icon: [
       { url: '/icon-32.png', sizes: '32x32', type: 'image/png' },
