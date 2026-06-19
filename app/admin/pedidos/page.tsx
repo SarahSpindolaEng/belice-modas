@@ -5,7 +5,7 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
-import { formatPrice } from '@/lib/products'
+import { formatPrice, products } from '@/lib/products'
 import { Loader2 } from 'lucide-react'
 
 interface OrderItem {
@@ -13,6 +13,16 @@ interface OrderItem {
   quantity: number
   unit_price: number
   description?: string
+  id?: string
+  picture_url?: string
+  image?: string
+}
+
+function itemImg(item: OrderItem): string {
+  const p =
+    products.find((pr) => pr.id === item.id) ??
+    products.find((pr) => pr.name === item.title)
+  return p?.images?.[0] || item.picture_url || item.image || '/placeholder.svg'
 }
 
 interface Order {
@@ -322,8 +332,13 @@ export default function AdminPedidosPage() {
                     <p className="mb-2 text-xs uppercase tracking-widest text-muted-foreground">Itens</p>
                     <div className="space-y-1">
                       {(Array.isArray(order.items) ? order.items : []).map((item, i) => (
-                        <div key={i} className="flex justify-between text-sm">
-                          <span className="text-foreground">
+                        <div key={i} className="flex items-center gap-3 text-sm">
+                          <img
+                            src={itemImg(item)}
+                            alt={item.title}
+                            className="h-14 w-11 shrink-0 rounded border border-border object-cover object-top bg-secondary"
+                          />
+                          <span className="flex-1 text-foreground">
                             {item.title}
                             {item.description ? <span className="text-muted-foreground"> · {item.description}</span> : null}
                             {' '}× {item.quantity}
