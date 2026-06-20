@@ -32,7 +32,7 @@ export default function PaymentPage() {
         <PageBanner
           title="Pagamento"
           breadcrumb={[
-            { label: 'Início', href: '/' },
+            { label: 'Início', href: '/inicio' },
             { label: 'Checkout', href: '/checkout' },
             { label: 'Pagamento' },
           ]}

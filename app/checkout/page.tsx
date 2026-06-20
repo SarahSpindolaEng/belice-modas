@@ -167,7 +167,7 @@ function CheckoutContent() {
       <PageBanner
         title="Finalizar Compra"
         breadcrumb={[
-          { label: 'Início', href: '/' },
+          { label: 'Início', href: '/inicio' },
           { label: 'Carrinho', href: '/carrinho' },
           { label: 'Checkout' },
         ]}

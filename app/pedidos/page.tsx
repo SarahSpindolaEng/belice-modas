@@ -12,7 +12,7 @@ export default function OrdersPage() {
         <PageBanner
           title="Meus Pedidos"
           subtitle="Acompanhe o status e o rastreamento das suas compras."
-          breadcrumb={[{ label: 'Inicio', href: '/' }, { label: 'Meus Pedidos' }]}
+          breadcrumb={[{ label: 'Inicio', href: '/inicio' }, { label: 'Meus Pedidos' }]}
         />
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-14">
           <div className="py-16 text-center">

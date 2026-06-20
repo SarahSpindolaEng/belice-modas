@@ -14,7 +14,7 @@ import { AdminNotificacoes } from '@/components/admin-notificacoes'
 const ADMIN_EMAILS = ['belicemodas6@gmail.com', 'sarahgiulia2005@gmail.com']
 
 const mainLinks = [
-  { href: '/', label: 'Início' },
+  { href: '/inicio', label: 'Início' },
   { href: '/novidades', label: 'Novidades' },
 ]
 
@@ -85,7 +85,7 @@ export function SiteHeader() {
           </nav>
 
           {/* logo center */}
-          <Link href="/" className="flex items-center gap-1.5 justify-center" aria-label="Belice Modas - Início">
+          <Link href="/inicio" className="flex items-center gap-1.5 justify-center" aria-label="Belice Modas - Início">
             <Image
               src="/logo-belice-symbol.png"
               alt="Belice Modas"
@@ -153,7 +153,7 @@ export function SiteHeader() {
                   )}
                   <button
                     type="button"
-                    onClick={() => signOut({ callbackUrl: '/' })}
+                    onClick={() => signOut({ callbackUrl: '/inicio' })}
                     className="flex w-full items-center gap-2 px-4 py-3 text-xs uppercase tracking-wider text-foreground/80 hover:bg-accent hover:text-gold-dark transition-colors"
                   >
                     <LogOut className="h-3.5 w-3.5" /> Sair
@@ -290,7 +290,7 @@ export function SiteHeader() {
               <div className="px-4 py-4 border-t border-border">
                 <button
                   type="button"
-                  onClick={() => { signOut({ callbackUrl: '/' }); setMobileOpen(false) }}
+                  onClick={() => { signOut({ callbackUrl: '/inicio' }); setMobileOpen(false) }}
                   className="flex w-full items-center gap-2 rounded-md px-3 py-3 text-sm uppercase tracking-wider font-light text-foreground/70 hover:bg-accent hover:text-gold-dark transition-colors"
                 >
                   <LogOut className="h-4 w-4" /> Sair da conta
