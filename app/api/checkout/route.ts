@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { mpAccessToken } from '@/lib/mp'
 import { MercadoPagoConfig, Preference } from 'mercadopago'
-import { products } from '@/lib/products'
+import { products, testProduct, TEST_PRODUCT_ID } from '@/lib/products'
+import { isAdmin } from '@/lib/admin-emails'
 import { rateLimit, getIp } from '@/lib/rate-limit'
 import { auth } from '@/auth'
 import { cotarFrete } from '@/lib/frete'
@@ -64,7 +65,9 @@ export async function POST(req: NextRequest) {
     // Validar itens contra catálogo real (preço vem do servidor, nunca do navegador)
     const validatedItems = []
     for (const item of items) {
-      const product = products.find((p) => p.id === item?.id)
+      const product =
+        products.find((p) => p.id === item?.id) ??
+        (item?.id === TEST_PRODUCT_ID && isAdmin(email) ? testProduct : undefined)
       if (!product) return NextResponse.json({ error: 'Produto não encontrado.' }, { status: 400 })
       if (product.price <= 0 || product.pendingPrice) {
         return NextResponse.json({ error: `Produto indisponível: ${product.name}` }, { status: 400 })
@@ -78,6 +81,7 @@ export async function POST(req: NextRequest) {
         quantity,
         unit_price: product.price,
         currency_id: 'BRL',
+        category_id: 'fashion',
         description: color ? color + (size ? ' - ' + size : '') : size,
         picture_url: product.images[0] ?? undefined,
       })
@@ -88,7 +92,8 @@ export async function POST(req: NextRequest) {
     const retirada = !de || typeof de !== 'object'
     let dadosEnvio: Record<string, unknown> | null = null
     let enderecoTexto = 'Retirada na loja'
-    let freteItem: { id: string; title: string; quantity: number; unit_price: number; currency_id: string } | null = null
+    let payerExtra: Record<string, unknown> = {}
+    let freteItem: { id: string; title: string; quantity: number; unit_price: number; currency_id: string; category_id: string } | null = null
 
     if (!retirada) {
       const d = {
@@ -123,12 +128,23 @@ export async function POST(req: NextRequest) {
         )
       }
 
+      // Dados do comprador para o antifraude do Mercado Pago (não são salvos em texto puro)
+      const partesNome = d.nome.split(/\s+/)
+      payerExtra = {
+        name: partesNome[0],
+        surname: partesNome.slice(1).join(' ') || undefined,
+        phone: { area_code: d.telefone.slice(0, 2), number: d.telefone.slice(2) },
+        identification: { type: 'CPF', number: d.cpf },
+        address: { zip_code: d.cep, street_name: d.rua, street_number: d.numero },
+      }
+
       freteItem = {
         id: 'frete',
         title: `Frete - ${opcao.transportadora} ${opcao.nome}`.slice(0, 120),
         quantity: 1,
         unit_price: Math.round(opcao.preco * 100) / 100,
         currency_id: 'BRL',
+        category_id: 'services',
       }
 
       dadosEnvio = {
@@ -155,7 +171,14 @@ export async function POST(req: NextRequest) {
     const result = await preference.create({
       body: {
         items: mpItems,
-        payer: { email },
+        payer: {
+          ...(retirada && session?.user?.name
+            ? { name: session.user.name.split(/\s+/)[0], surname: session.user.name.split(/\s+/).slice(1).join(' ') || undefined }
+            : {}),
+          ...payerExtra,
+          email,
+          authentication_type: 'Gmail',
+        },
         external_reference: JSON.stringify({ email, pedido: orderRef }),
         back_urls: {
           success: `${appUrl}/pedido/confirmacao?status=approved`,

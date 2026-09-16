@@ -5,7 +5,7 @@
  * VALORES ESTIMADOS: pese algumas peças já embaladas e ajuste aqui.
  * Pesos em kg, medidas em cm.
  */
-import { products } from '@/lib/products'
+import { products, TEST_PRODUCT_ID } from '@/lib/products'
 
 type TipoPeca = 'vestido' | 'saia' | 'calca' | 'bermuda' | 'jardineira' | 'outro'
 
@@ -30,6 +30,7 @@ export const EMBALAGEM = {
 }
 
 function tipoDoProduto(id: unknown): TipoPeca {
+  if (id === TEST_PRODUCT_ID) return 'vestido' // teste simula um vestido
   const p = products.find((pr) => pr.id === id)
   if (!p) return 'outro'
   if (p.category === 'vestidos') return 'vestido'

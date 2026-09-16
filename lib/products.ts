@@ -1000,6 +1000,22 @@ export const products: Product[] = [
   },
 ]
 
+// ── produto de TESTE ──────────────────────────────────────────────────────────
+// Fica FORA da lista `products`: não aparece no catálogo, busca nem páginas.
+// Só pode ser comprado por admin (validado no /api/checkout).
+export const TEST_PRODUCT_ID = 'teste-pagamento-5'
+export const testProduct: Product = {
+  id: TEST_PRODUCT_ID,
+  name: 'Produto de TESTE (pagamento)',
+  category: 'vestidos',
+  categoryLabel: 'Teste',
+  description: 'Item de teste do fluxo de compra — somente admin.',
+  longDescription: 'Item de teste do fluxo de compra — somente admin.',
+  price: 5,
+  images: ['/placeholder.jpg'],
+  sizes: ['M'],
+}
+
 // ── helpers ───────────────────────────────────────────────────────────────────
 
 export function formatPrice(value: number) {
