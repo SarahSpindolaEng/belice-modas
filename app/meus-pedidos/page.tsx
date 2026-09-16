@@ -243,7 +243,7 @@ export default function MeusPedidosPage() {
                     <div className="mt-4 border border-border bg-accent/30 px-4 py-3">
                       <p className="text-xs uppercase tracking-widest text-muted-foreground">Código de rastreio</p>
                       <a
-                        href={`https://www.linkcorreios.com.br/${order.tracking_code}`}
+                        href={`https://melhorrastreio.com.br/rastreio/${encodeURIComponent(order.tracking_code)}`}
                         target="_blank" rel="noopener noreferrer"
                         className="mt-0.5 font-mono text-sm text-foreground underline decoration-gold hover:text-gold-dark"
                       >

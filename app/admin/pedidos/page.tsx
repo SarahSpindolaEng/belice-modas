@@ -357,7 +357,7 @@ export default function AdminPedidosPage() {
                       <span>
                         Rastreio:{' '}
                         <a
-                          href={`https://www.linkcorreios.com.br/?id=${order.tracking_code}`}
+                          href={`https://melhorrastreio.com.br/rastreio/${encodeURIComponent(order.tracking_code)}`}
                           target="_blank"
                           rel="noreferrer"
                           className="font-mono text-gold-dark underline"
