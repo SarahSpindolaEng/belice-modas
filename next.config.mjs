@@ -28,17 +28,17 @@ const nextConfig = {
             value: [
               "default-src 'self'",
               // Scripts: apenas o próprio site + Mercado Pago + Next.js inline (nonce não suportado em static export)
-              "script-src 'self' 'unsafe-inline' https://sdk.mercadopago.com https://www.mercadopago.com",
+              "script-src 'self' 'unsafe-inline' https://sdk.mercadopago.com https://*.mercadopago.com https://*.mlstatic.com",
               // Estilos: inline permitido (Tailwind gera inline)
-              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://*.mlstatic.com",
               // Fontes
-              "font-src 'self' https://fonts.gstatic.com",
+              "font-src 'self' data: https://fonts.gstatic.com https://*.mlstatic.com",
               // Imagens: próprio site + Google (fotos de perfil OAuth) + Melhor Envio logos
-              "img-src 'self' data: blob: https://lh3.googleusercontent.com https://sandbox.melhorenvio.com.br https://melhorenvio.com.br",
+              "img-src 'self' data: blob: https://lh3.googleusercontent.com https://sandbox.melhorenvio.com.br https://melhorenvio.com.br https://*.mlstatic.com https://*.mercadopago.com https://*.mercadolibre.com",
               // Conexões: próprio site + ViaCEP + Mercado Pago + Melhor Envio + Google OAuth
-              "connect-src 'self' https://viacep.com.br https://api.mercadopago.com https://sandbox.mercadopago.com.br https://sandbox.melhorenvio.com.br https://melhorenvio.com.br https://oauth2.googleapis.com https://accounts.google.com",
+              "connect-src 'self' https://viacep.com.br https://api.mercadopago.com https://*.mercadopago.com https://*.mercadopago.com.br https://*.mercadolibre.com https://*.mercadolivre.com https://*.mlstatic.com https://sandbox.melhorenvio.com.br https://melhorenvio.com.br https://oauth2.googleapis.com https://accounts.google.com",
               // Iframes: Mercado Pago e Google (OAuth pode usar iframes)
-              "frame-src https://www.mercadopago.com https://www.mercadolibre.com https://accounts.google.com",
+              "frame-src https://*.mercadopago.com https://*.mercadopago.com.br https://*.mercadolibre.com https://*.mercadolivre.com https://accounts.google.com",
               // Tudo mais bloqueado
               "object-src 'none'",
               "base-uri 'self'",
