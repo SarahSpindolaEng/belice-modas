@@ -1,12 +1,11 @@
 /**
- * Pagamento de TESTE (somente admin) pela API do Mercado Pago (Checkout Transparente).
- * O formulário de cartão (Card Payment Brick) gera um token no navegador;
- * aqui o servidor cria o pagamento. Valor e descrição são definidos no servidor.
- * Segue o mesmo fluxo do checkout real: pedido pending + webhook + painel + reembolso.
+ * Pedido de TESTE (somente admin): cria um pagamento de valor simbólico,
+ * sem frete (retirada), usando o mesmo fluxo do checkout real
+ * (pedido pending + webhook + painel admin + reembolso).
  */
 import { NextRequest, NextResponse } from 'next/server'
 import { randomUUID } from 'crypto'
-import { MercadoPagoConfig, Payment } from 'mercadopago'
+import { MercadoPagoConfig, Preference } from 'mercadopago'
 import { auth } from '@/auth'
 import { isAdmin } from '@/lib/admin-emails'
 import { mpAccessToken } from '@/lib/mp'
@@ -15,7 +14,7 @@ import { logAdmin } from '@/lib/audit'
 import sql from '@/lib/db'
 
 const client = new MercadoPagoConfig({ accessToken: mpAccessToken() })
-const VALORES_TESTE = [0.1, 1, 5]
+const VALORES_PERMITIDOS = [0.1, 1, 5]
 
 export async function POST(req: NextRequest) {
   const ip = getIp(req)
@@ -23,28 +22,20 @@ export async function POST(req: NextRequest) {
   if (!allowed) return NextResponse.json({ error: 'Muitas tentativas.' }, { status: 429 })
 
   const session = await auth()
-  const adminEmail = session?.user?.email?.toLowerCase()
-  if (!adminEmail || !isAdmin(adminEmail)) {
+  const email = session?.user?.email?.toLowerCase()
+  if (!email || !isAdmin(email)) {
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
   }
 
   const body = await req.json().catch(() => null)
   const valor = Number(body?.valor)
-  const fd = body?.formData
-  if (!VALORES_TESTE.includes(valor)) {
+  if (!VALORES_PERMITIDOS.includes(valor)) {
     return NextResponse.json({ error: 'Valor não permitido.' }, { status: 400 })
   }
-  if (!fd || typeof fd.token !== 'string' || typeof fd.payment_method_id !== 'string') {
-    return NextResponse.json({ error: 'Dados do cartão ausentes.' }, { status: 400 })
-  }
-
-  const payerEmailRaw = typeof fd.payer?.email === 'string' ? fd.payer.email.trim().toLowerCase().slice(0, 254) : ''
-  const payerEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payerEmailRaw) ? payerEmailRaw : adminEmail
-  const docType = typeof fd.payer?.identification?.type === 'string' ? fd.payer.identification.type.slice(0, 10) : undefined
-  const docNumber = typeof fd.payer?.identification?.number === 'string' ? fd.payer.identification.number.replace(/\D/g, '').slice(0, 14) : undefined
 
   try {
     await Promise.all([
+      sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS dados_envio jsonb`,
       sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS preference_id text`,
       sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS order_ref text`,
     ])
@@ -54,53 +45,48 @@ export async function POST(req: NextRequest) {
     const items = [{
       id: 'teste-pagamento',
       title: 'Pedido de TESTE - Belice Modas',
+      description: 'Teste de pagamento (retirada, sem frete)',
       quantity: 1,
       unit_price: valor,
       currency_id: 'BRL',
     }]
 
-    // Pedido pending (o webhook promove para approved pelo order_ref)
-    await sql`
-      INSERT INTO orders (payment_id, payment_type, status, payer_email, endereco, total, items, order_ref)
-      VALUES (
-        ${'tst_' + orderRef}, 'api', 'pending', ${adminEmail},
-        'TESTE - Retirada na loja', ${valor}, ${JSON.stringify(items)}, ${orderRef}
-      )
-    `
-
-    const pagamento = await new Payment(client).create({
+    const result = await new Preference(client).create({
       body: {
-        transaction_amount: valor,
-        token: fd.token,
-        description: 'Pedido de TESTE - Belice Modas',
-        installments: 1,
-        payment_method_id: fd.payment_method_id,
-        issuer_id: fd.issuer_id ? Number(fd.issuer_id) : undefined,
-        payer: {
-          email: payerEmail,
-          identification: docType && docNumber ? { type: docType, number: docNumber } : undefined,
+        items,
+        payer: { email },
+        external_reference: JSON.stringify({ email, pedido: orderRef, teste: true }),
+        back_urls: {
+          success: `${appUrl}/pedido/confirmacao?status=approved`,
+          failure: `${appUrl}/pedido/confirmacao?status=failure`,
+          pending: `${appUrl}/pedido/confirmacao?status=pending`,
         },
-        external_reference: JSON.stringify({ email: adminEmail, pedido: orderRef, teste: true }),
-        notification_url: `${appUrl}/api/webhook/mercadopago`,
+        auto_return: 'approved',
+        payment_methods: { installments: 12 },
         statement_descriptor: 'BELICE MODAS',
-        additional_info: { items: items.map(({ currency_id, ...i }) => i) },
+        notification_url: `${appUrl}/api/webhook/mercadopago`,
       },
-      requestOptions: { idempotencyKey: orderRef },
     })
 
-    await logAdmin({
-      adminEmail, acao: 'pagamento_teste', paymentId: String(pagamento.id ?? ''), ip,
-      detalhes: { valor, status: pagamento.status, status_detail: pagamento.status_detail },
-    })
+    if (!result.id || !result.init_point) {
+      return NextResponse.json({ error: 'Mercado Pago não retornou o link de pagamento.' }, { status: 502 })
+    }
 
-    return NextResponse.json({
-      id: pagamento.id,
-      status: pagamento.status,
-      status_detail: pagamento.status_detail,
-    })
+    await sql`
+      INSERT INTO orders (payment_id, payment_type, status, payer_email, endereco, total, items, preference_id, order_ref)
+      VALUES (
+        ${'pref_' + result.id}, 'preference', 'pending', ${email},
+        'TESTE - Retirada na loja', ${valor}, ${JSON.stringify(items)},
+        ${String(result.id)}, ${orderRef}
+      )
+      ON CONFLICT (payment_id) DO NOTHING
+    `
+    await logAdmin({ adminEmail: email, acao: 'pedido_teste_criado', paymentId: 'pref_' + result.id, ip, detalhes: { valor } })
+
+    return NextResponse.json({ init_point: result.init_point })
   } catch (err: any) {
-    console.error('Erro no pagamento de teste:', err)
-    const msg = typeof err?.message === 'string' ? err.message.slice(0, 200) : 'Erro ao processar pagamento de teste.'
-    return NextResponse.json({ error: msg }, { status: 502 })
+    console.error('Erro ao criar pedido de teste:', err)
+    const msg = typeof err?.message === 'string' ? err.message.slice(0, 200) : 'Erro ao criar pagamento de teste.'
+    return NextResponse.json({ error: msg }, { status: 500 })
   }
 }
