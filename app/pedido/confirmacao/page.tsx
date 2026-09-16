@@ -13,11 +13,24 @@ function ConfirmacaoContent() {
   const status = searchParams.get('status')
   const { clearCart } = useCart()
 
+  const paymentId = searchParams.get('payment_id') ?? searchParams.get('collection_id')
+
   useEffect(() => {
     if (status === 'approved') {
       clearCart()
     }
   }, [status, clearCart])
+
+  // Registra o pedido na hora (não depende só do webhook)
+  useEffect(() => {
+    if (!paymentId || !/^\d+$/.test(paymentId)) return
+    if (status !== 'approved' && status !== 'pending') return
+    fetch('/api/pedidos/confirmar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ payment_id: paymentId }),
+    }).catch(() => {})
+  }, [paymentId, status])
 
   const config = {
     approved: {

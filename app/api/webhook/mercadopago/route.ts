@@ -1,23 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { mpAccessToken } from '@/lib/mp'
-import { MercadoPagoConfig, Payment } from 'mercadopago'
 import { createHmac } from 'crypto'
-import nodemailer from 'nodemailer'
-import sql from '@/lib/db'
-
-const client = new MercadoPagoConfig({
-  accessToken: mpAccessToken(),
-})
-
-// Escapa HTML para evitar injecao no email de notificacao
-function escapeHtml(v: unknown): string {
-  return String(v ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;')
-}
+import { registrarPagamento } from '@/lib/mp-pedido'
 
 /**
  * Verifica assinatura do Mercado Pago (x-signature header).
@@ -40,7 +23,10 @@ function verificarAssinaturaMP(req: NextRequest, rawBody: string): boolean {
   // Doc do MP: se o id for alfanumérico, usar em minúsculas no manifest
   const dataId = (new URL(req.url).searchParams.get('data.id') ?? '').toLowerCase()
 
-  if (!xSignature) return false
+  if (!xSignature) {
+    console.warn('Webhook MP rejeitado: sem x-signature')
+    return false
+  }
 
   // Formato: ts=...,v1=...
   const parts = Object.fromEntries(
@@ -69,16 +55,9 @@ function verificarAssinaturaMP(req: NextRequest, rawBody: string): boolean {
   for (let i = 0; i < expected.length; i++) {
     diff |= expected.charCodeAt(i) ^ hash.charCodeAt(i)
   }
+  if (diff !== 0) console.warn('Webhook MP rejeitado: assinatura não confere (confira MP_WEBHOOK_SECRET)')
   return diff === 0
 }
-
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_APP_PASSWORD?.replace(/\s/g, ''),
-  },
-})
 
 export async function POST(req: NextRequest) {
   try {
@@ -89,104 +68,15 @@ export async function POST(req: NextRequest) {
     }
 
     const body = JSON.parse(rawBody)
+    const tipo = body.type ?? body.topic
+    const id = body.data?.id ?? new URL(req.url).searchParams.get('data.id')
 
-    if (body.type !== 'payment') {
+    if (tipo !== 'payment' || !id) {
       return NextResponse.json({ ok: true })
     }
 
-    const payment = new Payment(client)
-    const data = await payment.get({ id: body.data.id })
-
-    if (data.status !== 'approved') {
-      return NextResponse.json({ ok: true })
-    }
-
-    const items = data.additional_info?.items ?? []
-    const payer = data.payer
-    const total = data.transaction_amount
-
-    // E-mail do pedido: o da sessão (gravado no external_reference) tem prioridade
-    let payerEmail: string | null = null
-    let orderRef: string | null = null
-    try {
-      const ref = data.external_reference ? JSON.parse(data.external_reference) : null
-      if (typeof ref?.email === 'string') payerEmail = ref.email
-      if (typeof ref?.pedido === 'string') orderRef = ref.pedido
-    } catch {}
-    if (!payerEmail) payerEmail = payer?.email ?? null
-
-    // Salvar no banco de dados
-    try {
-      const paymentId = String(data.id)
-      // preference_id não está no tipo do SDK, mas pode vir na resposta (pedidos antigos)
-      const prefKey = 'pref_' + String((data as any).preference_id ?? '-')
-
-      // 1) Caminho normal: promove o pedido pending (criado no checkout) para approved,
-      //    mantendo endereço e dados de envio que já estão nele.
-      await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS order_ref text`
-      const promovido = await sql`
-        UPDATE orders SET
-          status = 'approved',
-          payment_id = ${paymentId},
-          payment_type = ${data.payment_type_id ?? null}
-        WHERE (order_ref = ${orderRef ?? '-'} OR payment_id = ${prefKey})
-          AND status = 'pending'
-          AND NOT EXISTS (SELECT 1 FROM orders WHERE payment_id = ${paymentId})
-        RETURNING id
-      `
-
-      // 2) Sem pending (pedido antigo ou webhook repetido): upsert pelo payment_id.
-      if (promovido.length === 0) {
-        await sql`
-          INSERT INTO orders (payment_id, payment_type, status, payer_email, total, items)
-          VALUES (
-            ${paymentId},
-            ${data.payment_type_id ?? null},
-            'approved',
-            ${payerEmail},
-            ${total ?? 0},
-            ${JSON.stringify(items)}
-          )
-          ON CONFLICT (payment_id) DO UPDATE SET
-            status = CASE WHEN orders.status = 'cancelled' THEN orders.status ELSE 'approved' END,
-            payment_type = EXCLUDED.payment_type,
-            payer_email = COALESCE(orders.payer_email, EXCLUDED.payer_email)
-        `
-      }
-    } catch (dbErr) {
-      console.error('Erro ao salvar pedido no banco:', dbErr)
-    }
-
-    // Enviar email de notificação
-    const itemsHtml = items.map((item: any) =>
-      '<tr>' +
-      '<td style="padding:8px;border-bottom:1px solid #eee">' + escapeHtml(item.title) + (item.description ? ' (' + escapeHtml(item.description) + ')' : '') + '</td>' +
-      '<td style="padding:8px;border-bottom:1px solid #eee;text-align:center">' + escapeHtml(item.quantity) + '</td>' +
-      '<td style="padding:8px;border-bottom:1px solid #eee;text-align:right">R$ ' + Number(item.unit_price).toFixed(2) + '</td>' +
-      '</tr>'
-    ).join('')
-
-    await transporter.sendMail({
-      from: '"Belice Modas" <' + process.env.GMAIL_USER + '>',
-      to: process.env.GMAIL_USER,
-      subject: 'Novo pedido aprovado! #' + data.id,
-      html:
-        '<div style="font-family:sans-serif;max-width:600px;margin:0 auto">' +
-        '<h2 style="color:#1a1a1a">Novo pedido recebido</h2>' +
-        '<p><strong>Pagamento:</strong> #' + escapeHtml(data.id) + ' — ' + escapeHtml(data.payment_type_id) + '</p>' +
-        '<p><strong>Cliente:</strong> ' + escapeHtml(payerEmail ?? 'Não informado') + '</p>' +
-        '<table style="width:100%;border-collapse:collapse;margin:16px 0">' +
-        '<tr style="background:#f5f5f5">' +
-        '<th style="padding:8px;text-align:left">Produto</th>' +
-        '<th style="padding:8px;text-align:center">Qtd</th>' +
-        '<th style="padding:8px;text-align:right">Valor</th>' +
-        '</tr>' +
-        itemsHtml +
-        '</table>' +
-        '<p style="font-size:18px"><strong>Total: R$ ' + Number(total).toFixed(2) + '</strong></p>' +
-        '</div>',
-    })
-
+    const r = await registrarPagamento(String(id))
+    console.log('Webhook MP processado', { id: r.paymentId, status: r.status, novo: r.novo })
     return NextResponse.json({ ok: true })
   } catch (err) {
     console.error('Webhook MP erro:', err)

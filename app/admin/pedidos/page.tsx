@@ -203,6 +203,26 @@ export default function AdminPedidosPage() {
   const [busca, setBusca] = useState('')
   const [filtro, setFiltro] = useState<'todos' | 'cancelamentos'>('todos')
 
+  const [sincronizando, setSincronizando] = useState(false)
+  const [msgSync, setMsgSync] = useState<string | null>(null)
+
+  // Busca no Mercado Pago pagamentos aprovados que ainda não entraram no painel
+  async function sincronizar(manual = false) {
+    setSincronizando(true)
+    try {
+      const r = await fetch('/api/admin/pedidos/sincronizar', { method: 'POST' })
+      const d = await r.json().catch(() => ({}))
+      if (manual) {
+        setMsgSync(d.error ?? (d.registrados ? `${d.registrados} pedido(s) recuperado(s).` : 'Nenhum pagamento novo encontrado.'))
+      }
+    } catch {
+      if (manual) setMsgSync('Falha ao sincronizar.')
+    } finally {
+      setSincronizando(false)
+      carregarPedidos()
+    }
+  }
+
   function carregarPedidos() {
     fetch('/api/admin/pedidos')
       .then((r) => r.json())
@@ -220,6 +240,7 @@ export default function AdminPedidosPage() {
     }
     if (status === 'authenticated') {
       carregarPedidos()
+      sincronizar()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, router])
@@ -250,6 +271,15 @@ export default function AdminPedidosPage() {
             <p className="mt-1 text-sm text-muted-foreground">
               {orders.length} pedido{orders.length !== 1 ? 's' : ''} · Total: {formatPrice(totalGeral)}
             </p>
+            <button
+              type="button"
+              onClick={() => sincronizar(true)}
+              disabled={sincronizando}
+              className="mt-2 text-xs uppercase tracking-widest text-gold-dark underline disabled:opacity-60"
+            >
+              {sincronizando ? 'Sincronizando com o Mercado Pago…' : 'Sincronizar com o Mercado Pago'}
+            </button>
+            {msgSync && <p className="mt-1 text-xs text-muted-foreground">{msgSync}</p>}
           </div>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
             <div className="flex gap-2">
