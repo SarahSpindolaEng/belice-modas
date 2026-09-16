@@ -56,7 +56,7 @@ export function FreteCalculator({ quantidade, itens, onSelect, selected }: Frete
       const data = await res.json()
 
       if (!res.ok || data.error) {
-        setErro('Não foi possível calcular o frete. Tente novamente mais tarde.')
+        setErro(data.error ?? 'Não foi possível calcular o frete. Tente novamente mais tarde.')
         return
       }
 
