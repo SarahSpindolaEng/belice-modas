@@ -11,7 +11,7 @@ import { useCart } from '@/components/cart-context'
 import { formatPrice } from '@/lib/products'
 import { Truck, Store, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useSession } from 'next-auth/react'
+import { useSession, signIn } from 'next-auth/react'
 
 interface Endereco {
   nome: string
@@ -42,7 +42,7 @@ function formatarTelefone(v: string) {
 
 function CheckoutContent() {
   const { items, subtotal } = useCart()
-  const { data: session } = useSession()
+  const { data: session, status: sessionStatus } = useSession()
   const searchParams = useSearchParams()
   const [loadingMP, setLoadingMP] = useState(false)
   const [delivery, setDelivery] = useState<'entrega' | 'retirada'>('entrega')
@@ -101,7 +101,16 @@ function CheckoutContent() {
     return true
   }
 
+  function entrarParaComprar() {
+    // Carrinho fica no sessionStorage, então volta intacto após o login
+    signIn('google', { callbackUrl: window.location.pathname + window.location.search })
+  }
+
   async function handlePagar() {
+    if (sessionStatus !== 'authenticated') {
+      entrarParaComprar()
+      return
+    }
     if (!validarEndereco()) return
     setLoadingMP(true)
     try {
@@ -113,7 +122,6 @@ function CheckoutContent() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email: session?.user?.email ?? undefined,
           endereco: enderecoFormatado,
           items: items.map((i) => ({
             id: i.product.id,
@@ -146,11 +154,15 @@ function CheckoutContent() {
           },
         }),
       })
-      const data = await res.json()
+      const data = await res.json().catch(() => ({}))
+      if (res.status === 401 && data.login) {
+        entrarParaComprar()
+        return
+      }
       if (data.init_point) {
         window.location.href = data.init_point
       } else {
-        alert('Erro ao iniciar pagamento. Tente novamente.')
+        alert(data.error ?? 'Erro ao iniciar pagamento. Tente novamente.')
         setLoadingMP(false)
       }
     } catch {
@@ -328,9 +340,9 @@ function CheckoutContent() {
                 <span className="text-xl font-medium text-foreground">{formatPrice(total)}</span>
               </div>
               <button type="button" onClick={handlePagar}
-                disabled={loadingMP || (delivery === 'entrega' && !temFrete)}
+                disabled={loadingMP || sessionStatus === 'loading' || (sessionStatus === 'authenticated' && delivery === 'entrega' && !temFrete)}
                 className="mt-6 flex w-full items-center justify-center gap-2 bg-foreground px-6 py-4 text-xs uppercase tracking-widest text-background transition-colors hover:bg-gold-gradient hover:text-gold-foreground disabled:opacity-60">
-                {loadingMP ? <><Loader2 className="h-4 w-4 animate-spin" /> Aguarde...</> : 'Pagar com Mercado Pago'}
+                {loadingMP ? <><Loader2 className="h-4 w-4 animate-spin" /> Aguarde...</> : sessionStatus === 'authenticated' ? 'Pagar com Mercado Pago' : 'Entrar com Google para pagar'}
               </button>
             </aside>
           </div>

@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/auth'
 import { mpAccessToken } from '@/lib/mp'
-import { MercadoPagoConfig, Payment } from 'mercadopago'
+import { MercadoPagoConfig, PaymentRefund } from 'mercadopago'
 import sql from '@/lib/db'
 import { rateLimit, getIp } from '@/lib/rate-limit'
 import { isAdmin } from '@/lib/admin-emails'
+import { logAdmin } from '@/lib/audit'
 
 const client = new MercadoPagoConfig({
   accessToken: mpAccessToken(),
@@ -12,7 +13,8 @@ const client = new MercadoPagoConfig({
 
 export async function POST(req: NextRequest) {
   // Rate limit: máx 10 ações de cancelamento por minuto por IP
-  const { allowed } = await rateLimit(getIp(req), { maxRequests: 10, windowMs: 60_000 })
+  const ip = getIp(req)
+  const { allowed } = await rateLimit(ip, { maxRequests: 10, windowMs: 60_000 })
   if (!allowed) return NextResponse.json({ error: 'Muitas requisições.' }, { status: 429 })
 
   const session = await auth()
@@ -20,7 +22,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
   }
 
-  const { payment_id, acao } = await req.json() // acao: 'aprovar' | 'rejeitar'
+  const adminEmail = session!.user!.email!
+  const body = await req.json().catch(() => null)
+  const payment_id = typeof body?.payment_id === 'string' ? body.payment_id.slice(0, 200) : ''
+  const acao = body?.acao // 'aprovar' | 'rejeitar'
 
   if (!payment_id || !['aprovar', 'rejeitar'].includes(acao)) {
     return NextResponse.json({ error: 'Dados inválidos.' }, { status: 400 })
@@ -48,6 +53,7 @@ export async function POST(req: NextRequest) {
         cancelamento_data = NULL
       WHERE payment_id = ${payment_id}
     `
+    await logAdmin({ adminEmail, acao: 'cancelamento_rejeitado', paymentId: payment_id, ip })
     return NextResponse.json({ ok: true, mensagem: 'Cancelamento rejeitado.' })
   }
 
@@ -56,11 +62,11 @@ export async function POST(req: NextRequest) {
   let erroReembolso = null
 
   try {
-    const payment = new Payment(client)
+    const refund = new PaymentRefund(client)
     // O payment_id real começa com número, não com 'pref_' ou 'TEST-'
     const mpId = order.payment_id.replace(/^pref_/, '')
     if (/^\d+$/.test(mpId)) {
-      await payment.refund({ id: Number(mpId), body: {} })
+      await refund.total({ payment_id: mpId })
       reembolsoOk = true
     } else {
       erroReembolso = 'ID de pagamento inválido para reembolso (modo teste).'
@@ -78,6 +84,7 @@ export async function POST(req: NextRequest) {
     WHERE payment_id = ${payment_id}
   `
 
+  await logAdmin({ adminEmail, acao: 'cancelamento_aprovado', paymentId: payment_id, ip, detalhes: { reembolso: reembolsoOk, erro: erroReembolso } })
   return NextResponse.json({
     ok: true,
     reembolso: reembolsoOk,

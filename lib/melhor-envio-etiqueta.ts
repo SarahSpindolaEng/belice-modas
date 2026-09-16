@@ -7,6 +7,8 @@
  * Defensivo: cada passo verifica o retorno; em caso de falha, retorna { ok:false, erro }.
  */
 import { getMEBase } from '@/lib/me-token'
+import { decrypt } from '@/lib/crypto'
+import { montarPacote } from '@/lib/embalagem'
 
 interface DadosEnvio {
   nome: string
@@ -21,9 +23,11 @@ interface DadosEnvio {
   estado: string
   frete_service_id: number
   frete_nome?: string
+  frete_preco?: number
 }
 
 interface OrderItem {
+  id?: string
   title?: string
   name?: string
   quantity?: number
@@ -38,7 +42,6 @@ export interface ResultadoEtiqueta {
   erro?: string
 }
 
-const PACOTE_PADRAO = { height: 10, width: 30, length: 40, weight: 0.5 }
 
 function digits(v: string | undefined | null): string {
   return (v ?? '').replace(/\D/g, '')
@@ -98,11 +101,19 @@ export async function gerarEtiqueta(order: {
     return { ok: false, erro: 'Dados do remetente (loja) incompletos. Configure as variáveis LOJA_* no Vercel (nome, documento, endereço, número, bairro, cidade, estado, CEP).' }
   }
 
+  let cpfDestinatario = ''
+  try {
+    cpfDestinatario = digits(decrypt(d.cpf))
+  } catch (err) {
+    console.error('Falha ao descriptografar CPF:', err)
+    return { ok: false, erro: 'Não foi possível ler o CPF do pedido (verifique DATA_ENCRYPTION_KEY no Vercel).' }
+  }
+
   const to: Record<string, unknown> = {
     name: d.nome,
     phone: digits(d.telefone),
     email: '',
-    document: digits(d.cpf),
+    document: cpfDestinatario,
     address: d.rua,
     complement: d.complemento ?? '',
     number: d.numero,
@@ -115,18 +126,21 @@ export async function gerarEtiqueta(order: {
   }
   if (!to.document) return { ok: false, erro: 'CPF do destinatário ausente no pedido — não é possível gerar a etiqueta.' }
 
-  const itens: OrderItem[] = Array.isArray(order.items) ? (order.items as OrderItem[]) : []
+  // O item "frete" não é produto — fica fora da declaração de conteúdo e do seguro.
+  const itens: OrderItem[] = (Array.isArray(order.items) ? (order.items as OrderItem[]) : [])
+    .filter((i) => i.id !== 'frete')
+  const valorProdutos = Math.max(0, (Number(order.total) || 0) - (Number(d.frete_preco) || 0))
   const products = itens.map((i) => ({
     name: String(i.title ?? i.name ?? 'Produto').slice(0, 60),
     quantity: String(i.quantity ?? 1),
     unitary_value: String(Number(i.unit_price ?? 0) || 1),
   }))
   if (products.length === 0) {
-    products.push({ name: 'Pedido Belice Modas', quantity: '1', unitary_value: String(Number(order.total) || 1) })
+    products.push({ name: 'Pedido Belice Modas', quantity: '1', unitary_value: String(valorProdutos || 1) })
   }
 
   const options = {
-    insurance_value: Number(order.total) || 0,
+    insurance_value: valorProdutos,
     receipt: false,
     own_hand: false,
     reverse: false,
@@ -139,7 +153,7 @@ export async function gerarEtiqueta(order: {
     from,
     to,
     products,
-    volumes: [PACOTE_PADRAO],
+    volumes: [montarPacote(itens)],
     options,
   })
   if (!cart.ok || !cart.data?.id) {

@@ -26,7 +26,8 @@ export async function GET(req: NextRequest) {
       items,
       created_at
     FROM orders
-    WHERE payer_email = ${session.user.email}
+    WHERE lower(payer_email) = ${session.user.email.toLowerCase()}
+      AND status IN ('approved', 'cancelled')
     ORDER BY created_at DESC
   `
 

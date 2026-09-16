@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/auth'
 import { mpAccessToken } from '@/lib/mp'
-import { MercadoPagoConfig, Payment } from 'mercadopago'
+import { MercadoPagoConfig, PaymentRefund } from 'mercadopago'
 import sql from '@/lib/db'
 import { rateLimit, getIp } from '@/lib/rate-limit'
 import { isAdmin } from '@/lib/admin-emails'
 import { gerarEtiqueta } from '@/lib/melhor-envio-etiqueta'
+import { logAdmin } from '@/lib/audit'
 
 const client = new MercadoPagoConfig({
   accessToken: mpAccessToken(),
@@ -33,7 +34,8 @@ function ensureSchema() {
  * - negar: reembolsa o cliente no Mercado Pago e cancela o pedido.
  */
 export async function POST(req: NextRequest) {
-  const { allowed } = await rateLimit(getIp(req), { maxRequests: 20, windowMs: 60_000 })
+  const ip = getIp(req)
+  const { allowed } = await rateLimit(ip, { maxRequests: 20, windowMs: 60_000 })
   if (!allowed) return NextResponse.json({ error: 'Muitas requisições.' }, { status: 429 })
 
   const session = await auth()
@@ -43,7 +45,10 @@ export async function POST(req: NextRequest) {
 
   await ensureSchema()
 
-  const { payment_id, acao } = await req.json() // acao: 'aceitar' | 'negar'
+  const adminEmail = session!.user!.email!
+  const body = await req.json().catch(() => null)
+  const payment_id = typeof body?.payment_id === 'string' ? body.payment_id.slice(0, 200) : ''
+  const acao = body?.acao // 'aceitar' | 'negar'
   if (!payment_id || !['aceitar', 'negar'].includes(acao)) {
     return NextResponse.json({ error: 'Dados inválidos.' }, { status: 400 })
   }
@@ -84,6 +89,7 @@ export async function POST(req: NextRequest) {
           label_erro = NULL
         WHERE payment_id = ${payment_id}
       `
+      await logAdmin({ adminEmail, acao: 'pedido_aceito', paymentId: payment_id, ip, detalhes: { melhorEnvioId: etiqueta.melhorEnvioId ?? null } })
       return NextResponse.json({
         ok: true,
         mensagem: 'Pedido aceito e etiqueta gerada.',
@@ -93,6 +99,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Etiqueta falhou — NAO marca como aceito; mostra o erro pro admin corrigir e tentar de novo.
+    await logAdmin({ adminEmail, acao: 'etiqueta_falhou', paymentId: payment_id, ip, detalhes: { erro: etiqueta.erro ?? null } })
     await sql`UPDATE orders SET label_erro = ${etiqueta.erro ?? 'erro desconhecido'} WHERE payment_id = ${payment_id}`
     return NextResponse.json(
       { error: `Não foi possível gerar a etiqueta: ${etiqueta.erro}` },
@@ -104,10 +111,10 @@ export async function POST(req: NextRequest) {
   let reembolsoOk = false
   let erroReembolso: string | null = null
   try {
-    const payment = new Payment(client)
+    const refund = new PaymentRefund(client)
     const mpId = order.payment_id.replace(/^pref_/, '')
     if (/^\d+$/.test(mpId)) {
-      await payment.refund({ id: Number(mpId), body: {} })
+      await refund.total({ payment_id: mpId })
       reembolsoOk = true
     } else {
       erroReembolso = 'ID de pagamento inválido para reembolso (modo teste).'
@@ -122,5 +129,6 @@ export async function POST(req: NextRequest) {
     WHERE payment_id = ${payment_id}
   `
 
+  await logAdmin({ adminEmail, acao: 'pedido_negado', paymentId: payment_id, ip, detalhes: { reembolso: reembolsoOk, erro: erroReembolso } })
   return NextResponse.json({ ok: true, reembolso: reembolsoOk, aviso: erroReembolso })
 }

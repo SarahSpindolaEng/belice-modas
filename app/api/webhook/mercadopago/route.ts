@@ -37,7 +37,8 @@ function verificarAssinaturaMP(req: NextRequest, rawBody: string): boolean {
 
   const xSignature = req.headers.get('x-signature')
   const xRequestId = req.headers.get('x-request-id')
-  const dataId = new URL(req.url).searchParams.get('data.id') ?? ''
+  // Doc do MP: se o id for alfanumérico, usar em minúsculas no manifest
+  const dataId = (new URL(req.url).searchParams.get('data.id') ?? '').toLowerCase()
 
   if (!xSignature) return false
 
@@ -50,7 +51,9 @@ function verificarAssinaturaMP(req: NextRequest, rawBody: string): boolean {
   if (!ts || !hash) return false
 
   // Proteção contra replay attack: rejeita webhooks com timestamp > 5 minutos
-  const tsNum = Number(ts)
+  // O ts pode vir em segundos ou milissegundos — normaliza para segundos
+  const tsRaw = Number(ts)
+  const tsNum = tsRaw > 1e12 ? tsRaw / 1000 : tsRaw
   const ageSeconds = (Date.now() / 1000) - tsNum
   if (!isNaN(tsNum) && (ageSeconds > 300 || ageSeconds < -60)) {
     console.warn('Webhook MP rejeitado: timestamp fora do intervalo', { ageSeconds })
@@ -102,53 +105,54 @@ export async function POST(req: NextRequest) {
     const payer = data.payer
     const total = data.transaction_amount
 
-    // Recuperar endereço do external_reference
-    let endereco: string | null = null
-    let payerEmail = payer?.email ?? null
+    // E-mail do pedido: o da sessão (gravado no external_reference) tem prioridade
+    let payerEmail: string | null = null
+    let orderRef: string | null = null
     try {
       const ref = data.external_reference ? JSON.parse(data.external_reference) : null
-      if (ref?.endereco) endereco = ref.endereco
-      if (ref?.email && !payerEmail) payerEmail = ref.email
+      if (typeof ref?.email === 'string') payerEmail = ref.email
+      if (typeof ref?.pedido === 'string') orderRef = ref.pedido
     } catch {}
+    if (!payerEmail) payerEmail = payer?.email ?? null
 
     // Salvar no banco de dados
     try {
-      await sql`
-        INSERT INTO orders (payment_id, payment_type, status, payer_email, endereco, total, items)
-        VALUES (
-          ${String(data.id)},
-          ${data.payment_type_id ?? null},
-          'approved',
-          ${payerEmail},
-          ${endereco},
-          ${total ?? 0},
-          ${JSON.stringify(items)}
-        )
-        ON CONFLICT (payment_id) DO UPDATE SET
-          status = 'approved',
-          payment_type = EXCLUDED.payment_type,
-          payer_email = COALESCE(EXCLUDED.payer_email, orders.payer_email),
-          endereco = COALESCE(EXCLUDED.endereco, orders.endereco)
-      `
-      // Atualizar pedido pending criado na preference
-      await sql`
+      const paymentId = String(data.id)
+      // preference_id não está no tipo do SDK, mas pode vir na resposta (pedidos antigos)
+      const prefKey = 'pref_' + String((data as any).preference_id ?? '-')
+
+      // 1) Caminho normal: promove o pedido pending (criado no checkout) para approved,
+      //    mantendo endereço e dados de envio que já estão nele.
+      await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS order_ref text`
+      const promovido = await sql`
         UPDATE orders SET
           status = 'approved',
-          payment_id = ${String(data.id)},
+          payment_id = ${paymentId},
           payment_type = ${data.payment_type_id ?? null}
-        WHERE payment_id = ${'pref_' + (data.preference_id ?? '')}
+        WHERE (order_ref = ${orderRef ?? '-'} OR payment_id = ${prefKey})
           AND status = 'pending'
+          AND NOT EXISTS (SELECT 1 FROM orders WHERE payment_id = ${paymentId})
+        RETURNING id
       `
-      // Leva os dados estruturados de envio para o pedido aprovado (usados na geração da etiqueta).
-      await sql`
-        UPDATE orders dst SET
-          dados_envio = src.dados_envio,
-          preference_id = COALESCE(dst.preference_id, src.preference_id)
-        FROM orders src
-        WHERE dst.payment_id = ${String(data.id)}
-          AND src.payment_id = ${'pref_' + (data.preference_id ?? '')}
-          AND src.dados_envio IS NOT NULL
-      `
+
+      // 2) Sem pending (pedido antigo ou webhook repetido): upsert pelo payment_id.
+      if (promovido.length === 0) {
+        await sql`
+          INSERT INTO orders (payment_id, payment_type, status, payer_email, total, items)
+          VALUES (
+            ${paymentId},
+            ${data.payment_type_id ?? null},
+            'approved',
+            ${payerEmail},
+            ${total ?? 0},
+            ${JSON.stringify(items)}
+          )
+          ON CONFLICT (payment_id) DO UPDATE SET
+            status = CASE WHEN orders.status = 'cancelled' THEN orders.status ELSE 'approved' END,
+            payment_type = EXCLUDED.payment_type,
+            payer_email = COALESCE(orders.payer_email, EXCLUDED.payer_email)
+        `
+      }
     } catch (dbErr) {
       console.error('Erro ao salvar pedido no banco:', dbErr)
     }
@@ -170,7 +174,7 @@ export async function POST(req: NextRequest) {
         '<div style="font-family:sans-serif;max-width:600px;margin:0 auto">' +
         '<h2 style="color:#1a1a1a">Novo pedido recebido</h2>' +
         '<p><strong>Pagamento:</strong> #' + escapeHtml(data.id) + ' — ' + escapeHtml(data.payment_type_id) + '</p>' +
-        '<p><strong>Cliente:</strong> ' + escapeHtml(payer?.email ?? 'Não informado') + '</p>' +
+        '<p><strong>Cliente:</strong> ' + escapeHtml(payerEmail ?? 'Não informado') + '</p>' +
         '<table style="width:100%;border-collapse:collapse;margin:16px 0">' +
         '<tr style="background:#f5f5f5">' +
         '<th style="padding:8px;text-align:left">Produto</th>' +

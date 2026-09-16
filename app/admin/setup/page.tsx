@@ -2,12 +2,13 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { auth } from '@/auth'
 import { loadToken } from '@/lib/me-token'
+import { freteDisponivel } from '@/lib/frete'
 import { isAdmin } from '@/lib/admin-emails'
 
 export default async function SetupPage({
   searchParams,
 }: {
-  searchParams: { status?: string }
+  searchParams: Promise<{ status?: string }>
 }) {
   const session = await auth()
 
@@ -17,8 +18,9 @@ export default async function SetupPage({
   }
 
   const token = loadToken()
-  const connected = !!token
-  const justConnected = searchParams.status === 'ok'
+  const connected = !!token || freteDisponivel()
+  const { status } = await searchParams
+  const justConnected = status === 'ok'
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-secondary/30 px-4">

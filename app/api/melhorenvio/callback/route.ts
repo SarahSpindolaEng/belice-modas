@@ -5,14 +5,21 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getMEBase, saveToken } from '@/lib/me-token'
+import { auth } from '@/auth'
+import { isAdmin } from '@/lib/admin-emails'
 
 export async function GET(req: NextRequest) {
+  const session = await auth()
+  if (!isAdmin(session?.user?.email)) {
+    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  }
+
   const code = req.nextUrl.searchParams.get('code')
   const error = req.nextUrl.searchParams.get('error')
 
   if (error || !code) {
     return NextResponse.json(
-      { error: error ?? 'Código de autorização ausente' },
+      { error: 'Autorização não concluída.' },
       { status: 400 },
     )
   }
@@ -49,8 +56,8 @@ export async function GET(req: NextRequest) {
     })
 
     if (!res.ok) {
-      const body = await res.text()
-      return NextResponse.json({ error: 'Falha ao trocar código', detail: body }, { status: 500 })
+      console.error('Melhor Envio OAuth falhou:', res.status, await res.text())
+      return NextResponse.json({ error: 'Falha ao conectar com o Melhor Envio.' }, { status: 502 })
     }
 
     const data = await res.json()
@@ -60,6 +67,7 @@ export async function GET(req: NextRequest) {
     const appUrl = process.env.APP_URL ?? 'http://localhost:3000'
     return NextResponse.redirect(`${appUrl}/admin/setup?status=ok`)
   } catch (err) {
-    return NextResponse.json({ error: String(err) }, { status: 500 })
+    console.error('Melhor Envio OAuth erro:', err)
+    return NextResponse.json({ error: 'Erro interno.' }, { status: 500 })
   }
 }

@@ -87,7 +87,7 @@ function BotaoCancelar({ order, onCancelado }: { order: Order; onCancelado: () =
   const [erro, setErro] = useState<string | null>(null)
 
   const podeCancelar = ['aguardando_envio', 'etiqueta_gerada'].includes(order.status_envio)
-    && order.status !== 'cancelled'
+    && order.status === 'approved'
     && !order.cancelamento_solicitado
 
   if (!podeCancelar && !order.cancelamento_solicitado) return null

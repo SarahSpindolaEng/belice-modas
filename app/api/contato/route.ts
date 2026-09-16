@@ -22,7 +22,10 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  const { nome, email, mensagem } = await req.json()
+  const body = await req.json().catch(() => null)
+  const nome = typeof body?.nome === 'string' ? body.nome.trim() : ''
+  const email = typeof body?.email === 'string' ? body.email.trim() : ''
+  const mensagem = typeof body?.mensagem === 'string' ? body.mensagem.trim() : ''
 
   if (!nome || !email || !mensagem) {
     return NextResponse.json({ error: 'Campos obrigatórios ausentes.' }, { status: 400 })
@@ -48,27 +51,32 @@ export async function POST(req: NextRequest) {
     auth: { user, pass },
   })
 
-  const nomeEsc = escapeHtml(nome)
+  const nomeEsc = escapeHtml(nome.replace(/[\r\n]+/g, ' '))
   const emailEsc = escapeHtml(email)
   const mensagemEsc = escapeHtml(mensagem)
 
-  await transporter.sendMail({
-    from: `"Belice Modas" <${user}>`,
-    to: user,
-    replyTo: email,
-    subject: `Contato do site — ${nomeEsc}`,
-    html: `
-      <div style="font-family:sans-serif;max-width:600px;margin:0 auto">
-        <h2 style="color:#1a1a1a">Nova mensagem de contato</h2>
-        <table style="width:100%;border-collapse:collapse">
-          <tr><td style="padding:8px 0;color:#666;width:100px">Nome</td><td style="padding:8px 0">${nomeEsc}</td></tr>
-          <tr><td style="padding:8px 0;color:#666">E-mail</td><td style="padding:8px 0"><a href="mailto:${emailEsc}">${emailEsc}</a></td></tr>
-        </table>
-        <hr style="border:none;border-top:1px solid #eee;margin:16px 0"/>
-        <p style="white-space:pre-wrap;color:#1a1a1a">${mensagemEsc}</p>
-      </div>
-    `,
-  })
+  try {
+    await transporter.sendMail({
+      from: `"Belice Modas" <${user}>`,
+      to: user,
+      replyTo: email,
+      subject: `Contato do site — ${nomeEsc}`,
+      html: `
+        <div style="font-family:sans-serif;max-width:600px;margin:0 auto">
+          <h2 style="color:#1a1a1a">Nova mensagem de contato</h2>
+          <table style="width:100%;border-collapse:collapse">
+            <tr><td style="padding:8px 0;color:#666;width:100px">Nome</td><td style="padding:8px 0">${nomeEsc}</td></tr>
+            <tr><td style="padding:8px 0;color:#666">E-mail</td><td style="padding:8px 0"><a href="mailto:${emailEsc}">${emailEsc}</a></td></tr>
+          </table>
+          <hr style="border:none;border-top:1px solid #eee;margin:16px 0"/>
+          <p style="white-space:pre-wrap;color:#1a1a1a">${mensagemEsc}</p>
+        </div>
+      `,
+    })
+  } catch (err) {
+    console.error('Erro ao enviar contato:', err)
+    return NextResponse.json({ error: 'Não foi possível enviar agora. Tente mais tarde.' }, { status: 502 })
+  }
 
   return NextResponse.json({ ok: true })
 }

@@ -16,11 +16,12 @@ interface FreteOpcao {
 
 interface FreteCalculatorProps {
   quantidade: number
+  itens?: { id: string; quantity: number }[]
   onSelect: (opcao: FreteOpcao | null) => void
   selected: FreteOpcao | null
 }
 
-export function FreteCalculator({ quantidade, onSelect, selected }: FreteCalculatorProps) {
+export function FreteCalculator({ quantidade, itens, onSelect, selected }: FreteCalculatorProps) {
   const [cep, setCep] = useState('')
   const [loading, setLoading] = useState(false)
   const [opcoes, setOpcoes] = useState<FreteOpcao[]>([])
@@ -49,7 +50,7 @@ export function FreteCalculator({ quantidade, onSelect, selected }: FreteCalcula
       const res = await fetch('/api/frete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cep_destino: cepLimpo, quantidade }),
+        body: JSON.stringify({ cep_destino: cepLimpo, quantidade, itens }),
       })
 
       const data = await res.json()

@@ -28,10 +28,11 @@ export async function POST(req: NextRequest) {
     SELECT id, status, status_envio, cancelamento_solicitado
     FROM orders
     WHERE payment_id = ${payment_id}
-      AND payer_email = ${session.user.email}
+      AND lower(payer_email) = ${session.user.email.toLowerCase()}
   `
 
-  if (!order) {
+  // Só pedidos pagos podem ter cancelamento solicitado
+  if (!order || order.status !== 'approved') {
     return NextResponse.json({ error: 'Pedido não encontrado.' }, { status: 404 })
   }
 
@@ -52,7 +53,8 @@ export async function POST(req: NextRequest) {
       cancelamento_motivo = ${motivo ?? 'Não informado'},
       cancelamento_data = NOW()
     WHERE payment_id = ${payment_id}
-      AND payer_email = ${session.user.email}
+      AND lower(payer_email) = ${session.user.email.toLowerCase()}
+      AND status = 'approved'
   `
 
   return NextResponse.json({ ok: true })

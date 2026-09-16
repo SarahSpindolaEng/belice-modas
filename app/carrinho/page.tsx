@@ -161,6 +161,7 @@ export default function CartPage() {
                 )}
                 <FreteCalculator
                   quantidade={totalItens}
+                  itens={items.map((i) => ({ id: i.product.id, quantity: i.quantity }))}
                   onSelect={setFreteOpcao}
                   selected={freteOpcao}
                 />
