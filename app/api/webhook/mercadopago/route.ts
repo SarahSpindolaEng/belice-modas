@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createHmac } from 'crypto'
 import { registrarPagamento } from '@/lib/mp-pedido'
+import { rateLimit, getIp } from '@/lib/rate-limit'
 
 /**
  * Verifica assinatura do Mercado Pago (x-signature header).
@@ -11,7 +12,7 @@ function verificarAssinaturaMP(req: NextRequest, rawBody: string): boolean {
   if (!secret) {
     // Em producao, recusar webhooks sem segredo (fail-closed). Em dev, permitir p/ testes.
     if (process.env.NODE_ENV === 'production') {
-      console.error('MP_WEBHOOK_SECRET ausente em producao — webhook recusado. Configure a variavel no Vercel.')
+      console.warn('MP_WEBHOOK_SECRET ausente em producao — assinatura não verificada.')
       return false
     }
     console.warn('MP_WEBHOOK_SECRET nao configurado (dev) — aceitando sem validar assinatura.')
@@ -24,7 +25,7 @@ function verificarAssinaturaMP(req: NextRequest, rawBody: string): boolean {
   const dataId = (new URL(req.url).searchParams.get('data.id') ?? '').toLowerCase()
 
   if (!xSignature) {
-    console.warn('Webhook MP rejeitado: sem x-signature')
+    console.warn('Webhook MP: sem x-signature (formato IPN ou webhook não configurado no painel)')
     return false
   }
 
@@ -42,7 +43,7 @@ function verificarAssinaturaMP(req: NextRequest, rawBody: string): boolean {
   const tsNum = tsRaw > 1e12 ? tsRaw / 1000 : tsRaw
   const ageSeconds = (Date.now() / 1000) - tsNum
   if (!isNaN(tsNum) && (ageSeconds > 300 || ageSeconds < -60)) {
-    console.warn('Webhook MP rejeitado: timestamp fora do intervalo', { ageSeconds })
+    console.warn('Webhook MP: timestamp fora do intervalo', { ageSeconds })
     return false
   }
 
@@ -55,31 +56,42 @@ function verificarAssinaturaMP(req: NextRequest, rawBody: string): boolean {
   for (let i = 0; i < expected.length; i++) {
     diff |= expected.charCodeAt(i) ^ hash.charCodeAt(i)
   }
-  if (diff !== 0) console.warn('Webhook MP rejeitado: assinatura não confere (confira MP_WEBHOOK_SECRET)')
+  if (diff !== 0) console.warn('Webhook MP: assinatura não confere (MP_WEBHOOK_SECRET diferente do painel do Mercado Pago)')
   return diff === 0
 }
 
 export async function POST(req: NextRequest) {
   try {
     const rawBody = await req.text()
+    const url = new URL(req.url)
+    let body: any = {}
+    try { body = rawBody ? JSON.parse(rawBody) : {} } catch {}
 
-    if (!verificarAssinaturaMP(req, rawBody)) {
-      return NextResponse.json({ error: 'Assinatura inválida' }, { status: 401 })
-    }
+    // Aceita os dois formatos do Mercado Pago:
+    //  - Webhook: ?data.id=123&type=payment  + body { type, data: { id } }
+    //  - IPN:     ?topic=payment&id=123       (sem assinatura)
+    const tipo = body.type ?? body.topic ?? url.searchParams.get('type') ?? url.searchParams.get('topic')
+    const id = body.data?.id ?? url.searchParams.get('data.id') ?? url.searchParams.get('id')
 
-    const body = JSON.parse(rawBody)
-    const tipo = body.type ?? body.topic
-    const id = body.data?.id ?? new URL(req.url).searchParams.get('data.id')
-
-    if (tipo !== 'payment' || !id) {
+    if (tipo !== 'payment' || !id || !/^\d{1,20}$/.test(String(id))) {
       return NextResponse.json({ ok: true })
     }
 
+    // A assinatura é verificada e registrada, mas NÃO é o que garante a segurança:
+    // o pagamento é sempre consultado direto na API do Mercado Pago com o token da loja,
+    // então uma notificação falsa não consegue marcar nada como pago.
+    const assinaturaOk = verificarAssinaturaMP(req, rawBody)
+    if (!assinaturaOk) {
+      const { allowed } = await rateLimit(getIp(req), { maxRequests: 30, windowMs: 60_000 })
+      if (!allowed) return NextResponse.json({ error: 'Muitas requisições.' }, { status: 429 })
+    }
+
     const r = await registrarPagamento(String(id))
-    console.log('Webhook MP processado', { id: r.paymentId, status: r.status, novo: r.novo })
+    console.log('Webhook MP processado', { id: r.paymentId, status: r.status, novo: r.novo, assinaturaOk })
     return NextResponse.json({ ok: true })
-  } catch (err) {
-    console.error('Webhook MP erro:', err)
+  } catch (err: any) {
+    // Pagamento inexistente/de outra conta: responde 200 para o MP não reenviar
+    console.error('Webhook MP erro:', err?.message ?? err)
     return NextResponse.json({ ok: true })
   }
 }
